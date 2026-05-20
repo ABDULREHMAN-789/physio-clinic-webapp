@@ -1,0 +1,76 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class SessionModel {
+  final String sessionId;
+  final String patientId;
+  final DateTime sessionDate;
+  final String treatmentNotes;
+  final double charges;
+  final bool paymentStatus; // true = Paid, false = Unpaid
+  final String nextRecommendation;
+
+  SessionModel({
+    required this.sessionId,
+    required this.patientId,
+    required this.sessionDate,
+    required this.treatmentNotes,
+    required this.charges,
+    required this.paymentStatus,
+    required this.nextRecommendation,
+  });
+
+  SessionModel copyWith({
+    String? sessionId,
+    String? patientId,
+    DateTime? sessionDate,
+    String? treatmentNotes,
+    double? charges,
+    bool? paymentStatus,
+    String? nextRecommendation,
+  }) {
+    return SessionModel(
+      sessionId: sessionId ?? this.sessionId,
+      patientId: patientId ?? this.patientId,
+      sessionDate: sessionDate ?? this.sessionDate,
+      treatmentNotes: treatmentNotes ?? this.treatmentNotes,
+      charges: charges ?? this.charges,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      nextRecommendation: nextRecommendation ?? this.nextRecommendation,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'sessionId': sessionId,
+      'patientId': patientId,
+      'sessionDate': sessionDate,
+      'treatmentNotes': treatmentNotes,
+      'charges': charges,
+      'paymentStatus': paymentStatus,
+      'nextRecommendation': nextRecommendation,
+    };
+  }
+
+  factory SessionModel.fromMap(Map<String, dynamic> map) {
+    DateTime parseDate(dynamic dateField) {
+      if (dateField is Timestamp) {
+        return dateField.toDate();
+      } else if (dateField is String) {
+        return DateTime.tryParse(dateField) ?? DateTime.now();
+      } else if (dateField is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateField);
+      }
+      return DateTime.now();
+    }
+
+    return SessionModel(
+      sessionId: map['sessionId'] ?? '',
+      patientId: map['patientId'] ?? '',
+      sessionDate: parseDate(map['sessionDate']),
+      treatmentNotes: map['treatmentNotes'] ?? '',
+      charges: map['charges'] is num ? (map['charges'] as num).toDouble() : 0.0,
+      paymentStatus: map['paymentStatus'] ?? false,
+      nextRecommendation: map['nextRecommendation'] ?? '',
+    );
+  }
+}

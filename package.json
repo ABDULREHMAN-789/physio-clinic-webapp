@@ -1,0 +1,20 @@
+{
+  "name": "physio-therapy-firebase-setup",
+  "version": "1.0.0",
+  "description": "Firebase Firestore setup script for Physio Therapy Clinic",
+  "main": "firebase_setup.js",
+  "scripts": {
+    "setup": "node firebase_setup.js",
+    "init": "npm install && node firebase_setup.js"
+  },
+  "keywords": [
+    "firebase",
+    "firestore",
+    "physio-therapy"
+  ],
+  "author": "Physio Therapy Clinic",
+  "license": "MIT",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
