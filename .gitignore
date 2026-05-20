@@ -52,3 +52,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# Firebase / Google Cloud Secrets
+serviceAccountKey.json
