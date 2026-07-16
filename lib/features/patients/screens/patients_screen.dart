@@ -232,7 +232,6 @@ class PatientsScreen extends ConsumerWidget {
   }
 
   Widget _buildDesktopTable(BuildContext context, WidgetRef ref, List<PatientModel> patients) {
-    final textTheme = Theme.of(context).textTheme;
     final formatter = DateFormat('dd MMM yyyy');
 
     return Card(
@@ -258,20 +257,50 @@ class PatientsScreen extends ConsumerWidget {
               return DataRow(
                 cells: [
                   DataCell(
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                      ),
-                      child: Text(
-                        patient.patientId,
-                        style: const TextStyle(
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                          ),
+                          child: Text(
+                            patient.patientId,
+                            style: const TextStyle(
+                              color: AppColors.primaryDark,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (patient.customerType == 'massage_chair') ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3E0),
+                              borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.chair_rounded, size: 12, color: Color(0xFFE65100)),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Massage',
+                                  style: TextStyle(
+                                    color: Color(0xFFE65100),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   DataCell(
@@ -364,6 +393,31 @@ class PatientsScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    if (patient.customerType == 'massage_chair') ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chair_rounded, size: 12, color: Color(0xFFE65100)),
+                            SizedBox(width: 3),
+                            Text(
+                              'Massage',
+                              style: TextStyle(
+                                color: Color(0xFFE65100),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 AppSizes.h8,

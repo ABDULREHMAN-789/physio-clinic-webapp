@@ -30,7 +30,6 @@ class MainLayout extends ConsumerWidget {
       }
     });
 
-    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       drawer: isMobile ? const Drawer(child: SidebarContent(isDrawer: true)) : null,
@@ -41,14 +40,27 @@ class MainLayout extends ConsumerWidget {
               scrolledUnderElevation: 0,
               title: Row(
                 children: [
-                  const Icon(Icons.healing_rounded, color: AppColors.primary),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.asset(
+                      'assets/images/clinic_logo.jpg',
+                      width: 30,
+                      height: 30,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                   AppSizes.w8,
-                  Text(
-                    AppStrings.appName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Expanded(
+                    child: Text(
+                      AppStrings.appName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                    ),
                   ),
                 ],
               ),
@@ -158,6 +170,8 @@ class SidebarContent extends ConsumerWidget {
     final isExpanded = ref.watch(sidebarExpandedProvider) || isDrawer;
     final currentRoute = GoRouterState.of(context).uri.path;
     final textTheme = Theme.of(context).textTheme;
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.role == 'Admin';
 
     Widget buildMenuItem({
       required IconData icon,
@@ -222,48 +236,73 @@ class SidebarContent extends ConsumerWidget {
               mainAxisAlignment: isExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
               children: [
                 if (isExpanded) ...[
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppSizes.p8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                            border: Border.all(color: AppColors.border, width: 1),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(AppSizes.radiusSmall - 1),
+                            child: Image.asset(
+                              'assets/images/clinic_logo.jpg',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
-                        child: const Icon(Icons.healing_rounded, color: AppColors.primary, size: 22),
-                      ),
-                      AppSizes.w12,
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.appName,
-                            style: textTheme.headlineMedium?.copyWith(
-                              color: AppColors.primaryDark,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                        AppSizes.w12,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                AppStrings.appName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.headlineMedium?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                AppStrings.appSubtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            AppStrings.appSubtitle,
-                            style: textTheme.bodySmall?.copyWith(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ] else ...[
                   Container(
-                    padding: const EdgeInsets.all(AppSizes.p8),
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                      border: Border.all(color: AppColors.border, width: 1),
                     ),
-                    child: const Icon(Icons.healing_rounded, color: AppColors.primary, size: 22),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall - 1),
+                      child: Image.asset(
+                        'assets/images/clinic_logo.jpg',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ],
                 if (isExpanded) ...[
@@ -284,26 +323,49 @@ class SidebarContent extends ConsumerWidget {
             color: AppColors.primaryLight,
             child: Row(
               children: [
-                const Icon(Icons.healing_rounded, color: AppColors.primary, size: 28),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border, width: 1),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/clinic_logo.jpg',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
                 AppSizes.w12,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.appName,
-                      style: textTheme.headlineMedium?.copyWith(
-                        color: AppColors.primaryDark,
-                        fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppStrings.appName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.headlineMedium?.copyWith(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    Text(
-                      AppStrings.appSubtitle,
-                      style: textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondary,
+                      Text(
+                        AppStrings.appSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondary,
+                          fontSize: 10,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -322,15 +384,22 @@ class SidebarContent extends ConsumerWidget {
                 path: '/dashboard',
                 onTap: () => context.go('/dashboard'),
               ),
+              if (isAdmin)
+                buildMenuItem(
+                  icon: Icons.manage_accounts_rounded,
+                  label: 'Staff Management',
+                  path: '/staff',
+                  onTap: () => context.go('/staff'),
+                ),
               buildMenuItem(
                 icon: Icons.people_alt_rounded,
-                label: AppStrings.menuPatients,
+                label: isAdmin ? AppStrings.menuPatients : 'My Patients',
                 path: '/patients',
                 onTap: () => context.go('/patients'),
               ),
               buildMenuItem(
                 icon: Icons.history_edu_rounded,
-                label: AppStrings.menuSessions,
+                label: isAdmin ? AppStrings.menuSessions : 'My Sessions',
                 path: '/sessions',
                 onTap: () => context.go('/sessions'),
               ),
@@ -340,12 +409,27 @@ class SidebarContent extends ConsumerWidget {
                 path: '/billing',
                 onTap: () => context.go('/billing'),
               ),
-              buildMenuItem(
-                icon: Icons.analytics_rounded,
-                label: AppStrings.menuReports,
-                path: '/reports',
-                onTap: () => context.go('/reports'),
-              ),
+              if (isAdmin)
+                buildMenuItem(
+                  icon: Icons.analytics_rounded,
+                  label: AppStrings.menuReports,
+                  path: '/reports',
+                  onTap: () => context.go('/reports'),
+                ),
+              if (isAdmin)
+                buildMenuItem(
+                  icon: Icons.list_alt_rounded,
+                  label: 'Activity Logs',
+                  path: '/activity-logs',
+                  onTap: () => context.go('/activity-logs'),
+                ),
+              // Optional Settings if it ever gets implemented
+              // buildMenuItem(
+              //   icon: Icons.settings_rounded,
+              //   label: 'Settings',
+              //   path: '/settings',
+              //   onTap: () => {},
+              // ),
             ],
           ),
         ),

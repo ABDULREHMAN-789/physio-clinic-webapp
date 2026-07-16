@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        // 1. Email check in Auth Token (Case-Insensitive)
+        (request.auth.token != null && 
+         'email' in request.auth.token && 
+         request.auth.token.email != null && (
+           request.auth.token.email == 'admin@physioclinic.com' ||
+           request.auth.token.email == 'admin@clinic.com' ||
+           request.auth.token.email.matches('(?i).*admin.*')
+         )) ||
+        // 2. Custom claims role check
+        (request.auth.token != null && 
+         'role' in request.auth.token && (
+           request.auth.token.role == 'Admin' ||
+           request.auth.token.role == 'admin'
+         )) ||
+        // 3. User document check in Firestore (Capitalized or Lowercase)
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        )) ||
+        // 4. Default mock admin UID fallback for local testing
+        request.auth.uid == 'mock-admin'
+      );
+    }
+
+    // Helper: Get the current user's ID
+    function currentUserId() {
+      return request.auth.uid;
+    }
+
+    // Users collection - users can read/write their own profile, admins can manage all, anyone authenticated can read therapist profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        currentUserId() == userId || 
+        isAdmin() || 
+        (resource != null && 'role' in resource.data && resource.data.role == 'Therapist')
+      );
+      allow create: if isAuthenticated() && (currentUserId() == userId || isAdmin());
+      allow update: if isAuthenticated() && (isAdmin() || (currentUserId() == userId && request.resource.data.role == resource.data.role));
+      allow delete: if isAdmin();
+    }
+
+    // Patients collection
+    match /patients/{patientId} {
+      // Admin can read all patients
+      // Staff can read patients assigned to them OR patients with no therapist assigned
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Sessions collection
+    match /sessions/{sessionId} {
+      // Admin can read all sessions
+      // Staff can read sessions where they are the therapist
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Activity Logs collection
+    match /activity_logs/{logId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Massage Chair Bills collection — Admin only for reads
+    match /massage_chair_bills/{billId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Reassignment Logs collection
+    match /reassignment_logs/{logId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

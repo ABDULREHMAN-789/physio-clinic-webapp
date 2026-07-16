@@ -288,6 +288,7 @@ class SessionsScreen extends ConsumerWidget {
             columns: const [
               DataColumn(label: Text('Date & Time', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Patient Name', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Therapist', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Treatment summary', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Charges', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -331,6 +332,12 @@ class SessionsScreen extends ConsumerWidget {
                           style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                         ),
                       ],
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      session.therapistName ?? 'Unknown',
+                      style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
                     ),
                   ),
                   DataCell(
@@ -430,9 +437,21 @@ class SessionsScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      patient.fullName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            patient.fullName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                          ),
+                          AppSizes.h4,
+                          Text(
+                            'Therapist: ${session.therapistName ?? 'Unknown'}',
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

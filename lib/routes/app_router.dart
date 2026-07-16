@@ -15,8 +15,12 @@ import '../features/sessions/screens/add_session_screen.dart';
 import '../features/sessions/screens/sessions_screen.dart';
 import '../features/billing/screens/billing_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
+import '../features/reports/screens/activity_logs_screen.dart';
+import '../features/staff/screens/staff_screen.dart';
+import '../features/staff/screens/add_edit_staff_screen.dart';
 import '../models/patient_model.dart';
 import '../models/session_model.dart';
+import '../models/user_model.dart';
 
 // Key for Navigator
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -109,6 +113,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/reports',
             builder: (context, state) => const ReportsScreen(),
           ),
+          GoRoute(
+            path: '/staff',
+            builder: (context, state) => const StaffScreen(),
+            routes: [
+              GoRoute(
+                path: 'add',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => const AddEditStaffScreen(),
+              ),
+              GoRoute(
+                path: 'edit/:id',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) {
+                  final staffId = state.pathParameters['id']!;
+                  final staff = state.extra as UserModel?;
+                  return AddEditStaffScreen(staffId: staffId, staff: staff);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/activity-logs',
+            builder: (context, state) => const ActivityLogsScreen(),
+          ),
         ],
       ),
     ],
@@ -121,6 +149,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       if (authState.isAuthenticated && (isLoggingIn || isSplash)) {
         return '/dashboard';
+      }
+      
+      // RBAC: Prevent Therapist from accessing admin routes
+      if (authState.isAuthenticated && authState.role != 'Admin') {
+         if (state.uri.path.startsWith('/staff') || state.uri.path.startsWith('/activity-logs')) {
+             return '/dashboard'; // Redirect unauthorized access to dashboard
+         }
       }
       return null;
     },

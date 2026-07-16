@@ -1,10 +1,11 @@
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 /// Web implementation of local storage utility.
-/// Operates directly on the browser's window.localStorage.
+/// Uses package:web (dart:js_interop) — the modern replacement for dart:html.
 String? getLocalStorageItem(String key) {
   try {
-    return html.window.localStorage[key];
+    final value = web.window.localStorage.getItem(key);
+    return value;
   } catch (_) {
     return null;
   }
@@ -12,12 +13,12 @@ String? getLocalStorageItem(String key) {
 
 void setLocalStorageItem(String key, String value) {
   try {
-    html.window.localStorage[key] = value;
+    web.window.localStorage.setItem(key, value);
   } catch (_) {}
 }
 
 void removeLocalStorageItem(String key) {
   try {
-    html.window.localStorage.remove(key);
+    web.window.localStorage.removeItem(key);
   } catch (_) {}
 }

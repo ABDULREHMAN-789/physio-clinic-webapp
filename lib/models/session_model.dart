@@ -8,6 +8,8 @@ class SessionModel {
   final double charges;
   final bool paymentStatus; // true = Paid, false = Unpaid
   final String nextRecommendation;
+  final String? therapistId;
+  final String? therapistName;
 
   SessionModel({
     required this.sessionId,
@@ -17,6 +19,8 @@ class SessionModel {
     required this.charges,
     required this.paymentStatus,
     required this.nextRecommendation,
+    this.therapistId,
+    this.therapistName,
   });
 
   SessionModel copyWith({
@@ -27,6 +31,8 @@ class SessionModel {
     double? charges,
     bool? paymentStatus,
     String? nextRecommendation,
+    String? therapistId,
+    String? therapistName,
   }) {
     return SessionModel(
       sessionId: sessionId ?? this.sessionId,
@@ -36,6 +42,8 @@ class SessionModel {
       charges: charges ?? this.charges,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       nextRecommendation: nextRecommendation ?? this.nextRecommendation,
+      therapistId: therapistId ?? this.therapistId,
+      therapistName: therapistName ?? this.therapistName,
     );
   }
 
@@ -48,6 +56,8 @@ class SessionModel {
       'charges': charges,
       'paymentStatus': paymentStatus,
       'nextRecommendation': nextRecommendation,
+      'therapistId': therapistId,
+      'therapistName': therapistName,
     };
   }
 
@@ -71,6 +81,8 @@ class SessionModel {
       charges: map['charges'] is num ? (map['charges'] as num).toDouble() : 0.0,
       paymentStatus: map['paymentStatus'] ?? false,
       nextRecommendation: map['nextRecommendation'] ?? '',
+      therapistId: map['therapistId'],
+      therapistName: map['therapistName'],
     );
   }
 }

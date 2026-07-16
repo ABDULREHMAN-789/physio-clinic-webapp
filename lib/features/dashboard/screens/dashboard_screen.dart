@@ -7,8 +7,13 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../models/patient_model.dart';
 import '../../../models/session_model.dart';
+import '../../../models/massage_chair_bill_model.dart';
 import '../../patients/providers/patients_provider.dart';
 import '../../sessions/providers/sessions_provider.dart';
+import '../../billing/providers/massage_chair_provider.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../models/user_model.dart';
+import '../../staff/providers/staff_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -17,7 +22,10 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final patientsAsync = ref.watch(patientsStreamProvider);
     final sessionsAsync = ref.watch(sessionsStreamProvider);
-    final textTheme = Theme.of(context).textTheme;
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.role == 'Admin';
+    final massageChairBillsAsync = isAdmin ? ref.watch(massageChairBillsStreamProvider) : null;
+    final staffAsync = isAdmin ? ref.watch(staffProvider) : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -28,7 +36,33 @@ class DashboardScreen extends ConsumerWidget {
             data: (patients) {
               return sessionsAsync.when(
                 data: (sessions) {
-                  return _buildDashboardContent(context, ref, patients, sessions);
+                  if (isAdmin && massageChairBillsAsync != null && staffAsync != null) {
+                    return massageChairBillsAsync.when(
+                      data: (massageChairBills) {
+                        return staffAsync.when(
+                          data: (staff) {
+                            return _buildDashboardContent(context, ref, patients, sessions, massageChairBills, staff, isAdmin);
+                          },
+                          loading: () => const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 100.0),
+                              child: CircularProgressIndicator(color: AppColors.primary),
+                            ),
+                          ),
+                          error: (e, s) => Center(child: Text('Error loading staff: $e')),
+                        );
+                      },
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 100.0),
+                          child: CircularProgressIndicator(color: AppColors.primary),
+                        ),
+                      ),
+                      error: (e, s) => Center(child: Text('Error loading massage chair bills: $e')),
+                    );
+                  } else {
+                    return _buildDashboardContent(context, ref, patients, sessions, [], [], isAdmin);
+                  }
                 },
                 loading: () => const Center(
                   child: Padding(
@@ -57,10 +91,12 @@ class DashboardScreen extends ConsumerWidget {
     WidgetRef ref,
     List<PatientModel> patients,
     List<SessionModel> sessions,
+    List<MassageChairBillModel> massageChairBills,
+    List<UserModel> staff,
+    bool isAdmin,
   ) {
     final textTheme = Theme.of(context).textTheme;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < AppSizes.desktopBreakpoint;
+    final authState = ref.watch(authProvider);
 
     // Calculations
     final int totalPatients = patients.length;
@@ -68,6 +104,19 @@ class DashboardScreen extends ConsumerWidget {
     final double totalRevenue = sessions.fold(0.0, (sum, s) => sum + s.charges);
     final double pendingDues = sessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
     final double totalEarnings = totalRevenue - pendingDues;
+
+    // Consultation calculations
+    final double consultationRevenue = patients
+        .where((p) => p.consultationPaymentStatus ?? false)
+        .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final double consultationPending = patients
+        .where((p) => !(p.consultationPaymentStatus ?? false))
+        .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final double combinedPendingDues = pendingDues + (isAdmin ? consultationPending : 0.0);
+
+    // Massage chair calculations (admin only)
+    final double massageChairRevenue = massageChairBills.where((b) => b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee);
+    final double combinedEarnings = totalEarnings + massageChairRevenue + consultationRevenue;
 
     // Slice recent activities (Max 4 logs)
     final recentPatients = patients.take(4).toList();
@@ -128,6 +177,8 @@ class DashboardScreen extends ConsumerWidget {
               crossAxisCount = 1;
             } else if (width < 1000) {
               crossAxisCount = 2;
+            } else if (width < 1200) {
+              crossAxisCount = 3;
             }
 
             return GridView.count(
@@ -155,16 +206,42 @@ class DashboardScreen extends ConsumerWidget {
                   gradient: null,
                 ),
                 _buildStatCard(
-                  title: 'Revenue Collected',
+                  title: 'Therapy Revenue',
                   value: 'Rs. ${NumberFormat('#,##0').format(totalEarnings)}',
-                  subtitle: 'Earned earnings',
+                  subtitle: 'Collected therapy fees',
                   icon: Icons.check_circle_rounded,
                   color: AppColors.success,
-                  gradient: AppColors.dashboardCardGradient,
+                  gradient: null,
                 ),
+                if (isAdmin) ...[
+                  _buildStatCard(
+                    title: 'Massage Chair Revenue',
+                    value: 'Rs. ${NumberFormat('#,##0').format(massageChairRevenue)}',
+                    subtitle: 'Chair sessions collected',
+                    icon: Icons.chair_rounded,
+                    color: const Color(0xFFE65100),
+                    gradient: null,
+                  ),
+                  _buildStatCard(
+                    title: 'Consultation Revenue',
+                    value: 'Rs. ${NumberFormat('#,##0').format(consultationRevenue)}',
+                    subtitle: 'Consultation fees collected',
+                    icon: Icons.payment_rounded,
+                    color: Colors.purple,
+                    gradient: null,
+                  ),
+                  _buildStatCard(
+                    title: 'Total Revenue',
+                    value: 'Rs. ${NumberFormat('#,##0').format(combinedEarnings)}',
+                    subtitle: 'Therapy + Chair + Consult',
+                    icon: Icons.monetization_on_rounded,
+                    color: AppColors.primary,
+                    gradient: AppColors.dashboardCardGradient,
+                  ),
+                ],
                 _buildStatCard(
                   title: 'Pending Dues',
-                  value: 'Rs. ${NumberFormat('#,##0').format(pendingDues)}',
+                  value: 'Rs. ${NumberFormat('#,##0').format(combinedPendingDues)}',
                   subtitle: 'Outstanding dues',
                   icon: Icons.pending_actions_rounded,
                   color: AppColors.warning,
@@ -176,9 +253,43 @@ class DashboardScreen extends ConsumerWidget {
         ),
         AppSizes.h24,
 
+        if (!isAdmin) ...[
+          Builder(
+            builder: (context) {
+              final currentUser = authState.userModel;
+              final double percentage = currentUser?.revenuePercentage ?? 0.0;
+              final double totalTherapyRevenue = sessions.fold(0.0, (sum, s) => sum + s.charges);
+              final double calculatedSalary = totalTherapyRevenue * (percentage / 100);
+              final int sessionsCompleted = sessions.length;
+              final now = DateTime.now();
+              final currentMonthSessions = sessions.where((s) => s.sessionDate.year == now.year && s.sessionDate.month == now.month);
+              final double currentMonthRevenue = currentMonthSessions.fold(0.0, (sum, s) => sum + s.charges);
+              final double currentMonthSalary = currentMonthRevenue * (percentage / 100);
+              final double totalPaidRevenue = sessions.where((s) => s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
+              final double totalEarned = totalPaidRevenue * (percentage / 100);
+
+              return _buildTherapistSalaryCard(
+                context,
+                percentage,
+                totalTherapyRevenue,
+                calculatedSalary,
+                sessionsCompleted,
+                currentMonthSalary,
+                totalEarned,
+              );
+            },
+          ),
+          AppSizes.h24,
+        ],
+
         // 2. Revenue Graph Block
-        _buildRevenueGraphCard(context, sessions),
+        _buildRevenueGraphCard(context, patients, sessions, massageChairBills, isAdmin),
         AppSizes.h24,
+
+        if (isAdmin) ...[
+          _buildAdminStaffSalariesCard(context, staff, sessions),
+          AppSizes.h24,
+        ],
 
         // 3. Splits for Recent Check-ins and Recent Sessions
         LayoutBuilder(
@@ -294,13 +405,46 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRevenueGraphCard(BuildContext context, List<SessionModel> sessions) {
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRevenueGraphCard(
+    BuildContext context,
+    List<PatientModel> patients,
+    List<SessionModel> sessions,
+    List<MassageChairBillModel> massageChairBills,
+    bool isAdmin,
+  ) {
     // Generate monthly earnings details for the past 6 months
     final now = DateTime.now();
     final List<DateTime> months = List.generate(6, (i) => DateTime(now.year, now.month - i, 1));
     months.sort((a, b) => a.compareTo(b)); // Order chronologically
 
-    final List<FlSpot> spots = [];
+    final List<FlSpot> therapySpots = [];
+    final List<FlSpot> massageChairSpots = [];
+    final List<FlSpot> consultationSpots = [];
     final List<String> labels = [];
 
     for (int i = 0; i < months.length; i++) {
@@ -308,7 +452,28 @@ class DashboardScreen extends ConsumerWidget {
       final monthSessions = sessions.where((s) => s.sessionDate.year == m.year && s.sessionDate.month == m.month);
       // Collect only paid revenue to draw clean graphical data points
       final double paidRevenue = monthSessions.where((s) => s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
-      spots.add(FlSpot(i.toDouble(), paidRevenue));
+      
+      final double mcPaidRevenue = isAdmin
+          ? massageChairBills
+              .where((b) => b.sessionDate.year == m.year && b.sessionDate.month == m.month && b.paymentStatus)
+              .fold(0.0, (sum, b) => sum + b.fee)
+          : 0.0;
+
+      final double consultationPaidRevenue = isAdmin
+          ? patients
+              .where((p) =>
+                  p.consultationPaymentStatus == true &&
+                  p.consultationPaymentDate != null &&
+                  p.consultationPaymentDate!.year == m.year &&
+                  p.consultationPaymentDate!.month == m.month)
+              .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0))
+          : 0.0;
+
+      therapySpots.add(FlSpot(i.toDouble(), paidRevenue));
+      if (isAdmin) {
+        massageChairSpots.add(FlSpot(i.toDouble(), mcPaidRevenue));
+        consultationSpots.add(FlSpot(i.toDouble(), consultationPaidRevenue));
+      }
       labels.add(DateFormat('MMM').format(m));
     }
 
@@ -318,9 +483,24 @@ class DashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Collected Revenue Trend (Past 6 Months)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Collected Revenue Trend (Past 6 Months)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+                if (isAdmin)
+                  Row(
+                    children: [
+                      _buildLegendItem('Therapy', AppColors.primary),
+                      AppSizes.w16,
+                      _buildLegendItem('Massage Chair', const Color(0xFFE65100)),
+                      AppSizes.w16,
+                      _buildLegendItem('Consultation', const Color(0xFF8E24AA)),
+                    ],
+                  ),
+              ],
             ),
             AppSizes.h24,
             SizedBox(
@@ -343,6 +523,7 @@ class DashboardScreen extends ConsumerWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 30,
+                        interval: 1,
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx >= 0 && idx < labels.length) {
@@ -377,7 +558,7 @@ class DashboardScreen extends ConsumerWidget {
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: spots,
+                      spots: therapySpots,
                       isCurved: true,
                       color: AppColors.primary,
                       barWidth: 3.5,
@@ -395,6 +576,46 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    if (isAdmin) ...[
+                      LineChartBarData(
+                        spots: massageChairSpots,
+                        isCurved: true,
+                        color: const Color(0xFFE65100),
+                        barWidth: 3.5,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFE65100).withOpacity(0.25),
+                              const Color(0xFFE65100).withOpacity(0.0),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                      LineChartBarData(
+                        spots: consultationSpots,
+                        isCurved: true,
+                        color: const Color(0xFF8E24AA),
+                        barWidth: 3.5,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF8E24AA).withOpacity(0.25),
+                              const Color(0xFF8E24AA).withOpacity(0.0),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -524,7 +745,17 @@ class DashboardScreen extends ConsumerWidget {
                       final s = sessions[index];
                       final patient = patients.firstWhere(
                         (p) => p.patientId == s.patientId,
-                        orElse: () => null as dynamic,
+                        orElse: () => PatientModel(
+                          patientId: '',
+                          fullName: 'Unknown Patient',
+                          phone: '',
+                          age: 0,
+                          gender: '',
+                          address: '',
+                          medicalCondition: '',
+                          notes: '',
+                          registrationDate: DateTime.now(),
+                        ),
                       );
 
                       return ListTile(
@@ -542,7 +773,7 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ),
                         title: Text(
-                          patient.fullName ?? 'Unknown Patient',
+                          patient.fullName,
                           style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 13),
                         ),
                         subtitle: Text(
@@ -569,6 +800,280 @@ class DashboardScreen extends ConsumerWidget {
                         onTap: () {
                           context.go('/patients/${patient.patientId}');
                                                 },
+                      );
+                    },
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTherapistSalaryCard(
+    BuildContext context,
+    double percentage,
+    double totalRevenue,
+    double calculatedSalary,
+    int sessionsCompleted,
+    double currentMonthSalary,
+    double totalEarned,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.p24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSizes.p8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.payments_rounded, color: AppColors.primary, size: 24),
+                ),
+                AppSizes.w12,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'My Salary & Earnings Summary',
+                        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      Text(
+                        'Real-time calculation based on your therapy session revenue and assigned percentage',
+                        style: textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
+              child: Divider(),
+            ),
+            Wrap(
+              spacing: AppSizes.p24,
+              runSpacing: AppSizes.p24,
+              children: [
+                _buildSalaryMetricTile(
+                  context,
+                  title: 'Assigned Percentage',
+                  value: '${percentage.toStringAsFixed(0)}%',
+                  subtitle: 'Of therapy session revenue',
+                  icon: Icons.percent_rounded,
+                  iconColor: AppColors.secondary,
+                ),
+                _buildSalaryMetricTile(
+                  context,
+                  title: 'Total Therapy Revenue',
+                  value: 'Rs. ${NumberFormat('#,##0').format(totalRevenue)}',
+                  subtitle: 'Generated from $sessionsCompleted sessions',
+                  icon: Icons.trending_up_rounded,
+                  iconColor: AppColors.primary,
+                ),
+                _buildSalaryMetricTile(
+                  context,
+                  title: 'Calculated Salary',
+                  value: 'Rs. ${NumberFormat('#,##0').format(calculatedSalary)}',
+                  subtitle: 'Overall calculated share',
+                  icon: Icons.account_balance_rounded,
+                  iconColor: AppColors.success,
+                ),
+                _buildSalaryMetricTile(
+                  context,
+                  title: 'Current Month Salary',
+                  value: 'Rs. ${NumberFormat('#,##0').format(currentMonthSalary)}',
+                  subtitle: DateFormat('MMMM yyyy').format(DateTime.now()),
+                  icon: Icons.calendar_month_rounded,
+                  iconColor: Colors.purple,
+                ),
+                _buildSalaryMetricTile(
+                  context,
+                  title: 'Total Earned',
+                  value: 'Rs. ${NumberFormat('#,##0').format(totalEarned)}',
+                  subtitle: 'From paid sessions only',
+                  icon: Icons.check_circle_rounded,
+                  iconColor: AppColors.success,
+                  isHighlighted: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalaryMetricTile(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+    bool isHighlighted = false,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(AppSizes.p16),
+      decoration: BoxDecoration(
+        color: isHighlighted ? AppColors.success.withOpacity(0.05) : AppColors.background,
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+        border: Border.all(
+          color: isHighlighted ? AppColors.success.withOpacity(0.2) : AppColors.border,
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              AppSizes.w8,
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          AppSizes.h12,
+          Text(
+            value,
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: isHighlighted ? AppColors.success : AppColors.textPrimary,
+              fontSize: 18,
+            ),
+          ),
+          AppSizes.h4,
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 10, color: AppColors.textLight, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminStaffSalariesCard(
+    BuildContext context,
+    List<UserModel> staff,
+    List<SessionModel> sessions,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.p24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSizes.p8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.people_alt_rounded, color: AppColors.primary, size: 24),
+                ),
+                AppSizes.w12,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Staff Salary & Performance Summary',
+                        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      Text(
+                        'Overall therapist sessions and revenue generated with calculated salary shares',
+                        style: textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
+              child: Divider(),
+            ),
+            staff.isEmpty
+                ? const SizedBox(
+                    height: 120,
+                    child: Center(
+                      child: Text('No staff members registered yet.', style: TextStyle(color: AppColors.textSecondary)),
+                    ),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: constraints.maxWidth,
+                          ),
+                          child: DataTable(
+                            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+                            columns: const [
+                              DataColumn(label: Text('Staff Member', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Revenue %', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Sessions Conducted', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Total Revenue Generated', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Calculated Salary', style: TextStyle(fontWeight: FontWeight.bold))),
+                            ],
+                            rows: staff.map((therapist) {
+                              final therapistSessions = sessions.where((s) => s.therapistId == therapist.userId);
+                              final double revenueGenerated = therapistSessions.fold(0.0, (sum, s) => sum + s.charges);
+                              final int count = therapistSessions.length;
+                              final double calculatedSalary = revenueGenerated * (therapist.revenuePercentage / 100);
+
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(therapist.fullName, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                        Text(therapist.email, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                      ],
+                                    ),
+                                  ),
+                                  DataCell(Text(therapist.role)),
+                                  DataCell(Text('${therapist.revenuePercentage.toStringAsFixed(0)}%')),
+                                  DataCell(Text('$count')),
+                                  DataCell(Text('Rs. ${NumberFormat('#,##0').format(revenueGenerated)}')),
+                                  DataCell(
+                                    Text(
+                                      'Rs. ${NumberFormat('#,##0').format(calculatedSalary)}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
                       );
                     },
                   ),

@@ -1,5 +1,5 @@
 class AppStrings {
-  static const String appName = 'PhysioEase Pro';
+  static const String appName = 'SAEED PHYSIO & REHAB CLINIC';
   static const String appSubtitle = 'Clinic Management System';
 
   // Login Screen

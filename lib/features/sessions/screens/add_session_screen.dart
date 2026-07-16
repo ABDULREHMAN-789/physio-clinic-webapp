@@ -6,7 +6,9 @@ import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/validators.dart';
+import '../../../models/patient_model.dart';
 import '../../../models/session_model.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../patients/providers/patients_provider.dart';
 import '../providers/sessions_provider.dart';
 
@@ -134,6 +136,45 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
           ? widget.sessionId! 
           : 'SE-${const Uuid().v4().substring(0, 5).toUpperCase()}';
 
+      final authState = ref.read(authProvider);
+      String therapistId = '';
+      String therapistName = '';
+
+      if (authState.role == 'Admin') {
+        final patientsList = ref.read(patientsStreamProvider).value ?? [];
+        final selectedPatient = patientsList.firstWhere(
+          (p) => p.patientId == _selectedPatientId,
+          orElse: () => PatientModel(
+            patientId: '',
+            fullName: '',
+            phone: '',
+            age: 0,
+            gender: '',
+            address: '',
+            medicalCondition: '',
+            notes: '',
+            registrationDate: DateTime.now(),
+          ),
+        );
+        if (selectedPatient.isTemporarilyReassigned == true && selectedPatient.tempTherapistId != null) {
+          therapistId = selectedPatient.tempTherapistId!;
+          therapistName = selectedPatient.tempTherapistName ?? '';
+        } else {
+          therapistId = selectedPatient.assignedTherapistId ?? '';
+          therapistName = selectedPatient.assignedTherapistName ?? '';
+        }
+        
+        if (therapistId.isEmpty && authState.userModel != null) {
+          therapistId = authState.userModel!.userId;
+          therapistName = authState.userModel!.fullName;
+        }
+      } else {
+        if (authState.userModel != null) {
+          therapistId = authState.userModel!.userId;
+          therapistName = authState.userModel!.fullName;
+        }
+      }
+
       final session = SessionModel(
         sessionId: sessionId,
         patientId: _selectedPatientId!,
@@ -142,6 +183,8 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
         charges: double.parse(_chargesController.text.trim()),
         paymentStatus: _paymentStatus,
         nextRecommendation: _recommendationController.text.trim(),
+        therapistId: therapistId,
+        therapistName: therapistName,
       );
 
       final notifier = ref.read(sessionOperationProvider.notifier);

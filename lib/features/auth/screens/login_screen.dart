@@ -71,7 +71,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               width: 440,
               child: Card(
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.1),
+                shadowColor: AppColors.primary.withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
                   side: const BorderSide(color: AppColors.border, width: 1.5),
@@ -87,19 +87,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Medical Icon / Logo
                         Center(
                           child: Container(
-                            width: 68,
-                            height: 68,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: Colors.white,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
                             ),
-                            child: const Icon(
-                              Icons.healing_rounded,
-                              color: AppColors.primary,
-                              size: 36,
+                            child: ClipOval(
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Image.asset(
+                                  'assets/images/clinic_logo.jpg',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -129,9 +139,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSizes.p12),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
+                              color: AppColors.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                              border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                              border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [

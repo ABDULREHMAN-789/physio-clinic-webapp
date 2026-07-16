@@ -1,24 +1,31 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
+import '../../../models/user_model.dart';
 
 class AuthState {
   final bool isAuthenticated;
   final String email;
+  final String role;
+  final UserModel? userModel;
   final String? error;
   final bool isLoading;
 
   AuthState({
     required this.isAuthenticated,
     required this.email,
+    required this.role,
+    this.userModel,
     this.error,
     required this.isLoading,
   });
 
-  factory AuthState.initial(bool authenticated, String email) {
+  factory AuthState.initial(bool authenticated, String email, {String role = 'Therapist', UserModel? userModel}) {
     return AuthState(
       isAuthenticated: authenticated,
       email: email,
+      role: role,
+      userModel: userModel,
       error: null,
       isLoading: false,
     );
@@ -27,12 +34,16 @@ class AuthState {
   AuthState copyWith({
     bool? isAuthenticated,
     String? email,
+    String? role,
+    UserModel? userModel,
     String? error,
     bool? isLoading,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       email: email ?? this.email,
+      role: role ?? this.role,
+      userModel: userModel ?? this.userModel,
       error: error, // Clears error if set to null
       isLoading: isLoading ?? this.isLoading,
     );
@@ -47,6 +58,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       : super(AuthState.initial(
           _authRepository.getCurrentUser() != null,
           _authRepository.getCurrentUser()?.email ?? '',
+          role: _authRepository.getCurrentUser()?.role ?? 'Therapist',
+          userModel: _authRepository.getCurrentUser()?.userModel,
         )) {
     _listenToAuthChanges();
   }
@@ -57,12 +70,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(
           isAuthenticated: true,
           email: user.email,
+          role: user.role,
+          userModel: user.userModel,
           isLoading: false,
         );
       } else {
         state = state.copyWith(
           isAuthenticated: false,
           email: '',
+          role: 'Therapist',
           isLoading: false,
         );
       }
@@ -80,7 +96,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
           errMsg.contains('wrong-password') ||
           errMsg.contains('invalid-credential') ||
           errMsg.contains('Invalid credentials')) {
-        errMsg = 'Invalid email or password. Hint: admin@physioclinic.com / admin123';
+        errMsg = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (errMsg.contains('user-disabled')) {
+        errMsg = 'This account has been deactivated. Contact your administrator.';
       } else if (errMsg.contains('invalid-email')) {
         errMsg = 'The email address is badly formatted.';
       } else if (errMsg.contains('network-request-failed')) {
