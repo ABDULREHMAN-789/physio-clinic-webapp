@@ -90,16 +90,16 @@ class PatientDetailsScreen extends ConsumerWidget {
     final formatter = DateFormat('dd MMM yyyy');
     
     // Consultation Fee logic (accessible to admin)
-    final double consultationFee = (isAdmin && patient.consultationFee != null) ? patient.consultationFee! : 0.0;
-    final bool isConsultationPaid = patient.consultationPaymentStatus ?? false;
+    final double consultationFee = (isAdmin && patient.consultationFee != null) ? (patient.consultationFee ?? 0.0) : 0.0;
+    final String consultationStatus = patient.consultationPaymentStatus ?? 'Unpaid';
 
     final double totalCharges = sessions.fold(0.0, (sum, s) => sum + s.charges) + 
                                 massageBills.fold(0.0, (sum, b) => sum + b.fee) + 
                                 consultationFee;
         
-    final double unpaidDues = sessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges) + 
-                              massageBills.where((b) => !b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee) + 
-                              ((!isConsultationPaid) ? consultationFee : 0.0);
+    final double unpaidDues = sessions.where((s) => s.paymentStatus == 'Unpaid').fold(0.0, (sum, s) => sum + s.charges) + 
+                              massageBills.where((b) => b.paymentStatus == 'Unpaid').fold(0.0, (sum, b) => sum + b.fee) + 
+                              (consultationStatus == 'Unpaid' ? consultationFee : 0.0);
         
     final double totalPaid = totalCharges - unpaidDues;
 
@@ -329,7 +329,7 @@ class PatientDetailsScreen extends ConsumerWidget {
             ),
             AppSizes.h16,
             _buildBillingRow('Total Charges', 'Rs. ${NumberFormat('#,##0').format(totalCharges)}', false),
-            if (patient.consultationFee != null && patient.consultationFee! > 0)
+            if (patient.consultationFee != null && (patient.consultationFee! > 0 || patient.consultationPaymentStatus == 'Fee Waiver'))
               _buildBillingRow('  ↳ Consultation Fee', 'Rs. ${NumberFormat('#,##0').format(patient.consultationFee)}', false),
             if (sessions.isNotEmpty)
               _buildBillingRow('  ↳ Therapy Sessions Total', 'Rs. ${NumberFormat('#,##0').format(sessions.fold(0.0, (sum, s) => sum + s.charges))}', false),
@@ -342,7 +342,7 @@ class PatientDetailsScreen extends ConsumerWidget {
     );
 
     Widget? consultationCard;
-    if (isAdmin && patient.consultationFee != null && patient.consultationFee! > 0) {
+    if (isAdmin && (patient.consultationPaymentStatus != null || (patient.consultationFee != null && patient.consultationFee! >= 0))) {
       consultationCard = Card(
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.p24),
@@ -375,7 +375,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                     style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   Text(
-                    'Rs. ${NumberFormat('#,##0').format(patient.consultationFee)}',
+                    'Rs. ${NumberFormat('#,##0').format(patient.consultationFee ?? 0.0)}',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ],
@@ -391,67 +391,63 @@ class PatientDetailsScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (isConsultationPaid ? AppColors.success : AppColors.error).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                      color: (consultationStatus == 'Paid'
+                              ? AppColors.success
+                              : consultationStatus == 'Fee Waiver'
+                                  ? Colors.purple
+                                  : AppColors.error)
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      isConsultationPaid ? 'Paid' : 'Unpaid',
+                      patient.consultationPaymentStatus ?? 'Unpaid',
                       style: TextStyle(
-                        color: isConsultationPaid ? AppColors.success : AppColors.error,
-                        fontWeight: FontWeight.bold,
                         fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: patient.consultationPaymentStatus == 'Paid'
+                            ? AppColors.success
+                            : patient.consultationPaymentStatus == 'Fee Waiver'
+                                ? Colors.purple
+                                : AppColors.warning,
                       ),
                     ),
                   ),
                 ],
               ),
-              if (isConsultationPaid && patient.consultationPaymentDate != null) ...[
+              if (patient.consultationPaymentDate != null) ...[
                 AppSizes.h12,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Payment Date',
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                    ),
+                    const Text('Payment Date', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     Text(
-                      formatter.format(patient.consultationPaymentDate!),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                      DateFormat('dd MMM yyyy').format(patient.consultationPaymentDate!),
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: AppColors.textPrimary),
                     ),
                   ],
                 ),
               ],
               if (patient.consultationNotes != null && patient.consultationNotes!.isNotEmpty) ...[
                 AppSizes.h12,
-                const Divider(),
-                AppSizes.h8,
-                const Text(
-                  'Consultation Notes:',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                ),
+                const Text('Notes:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                 AppSizes.h4,
                 Text(
                   patient.consultationNotes!,
-                  style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                 ),
               ],
-              if (!isConsultationPaid) ...[
+              if (patient.consultationPaymentStatus != 'Paid' && patient.consultationPaymentStatus != 'Fee Waiver') ...[
                 AppSizes.h16,
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final updatedPatient = patient.copyWith(
-                        consultationPaymentStatus: true,
-                        consultationPaymentDate: DateTime.now(),
-                      );
-                      await ref.read(patientOperationProvider.notifier).updatePatient(updatedPatient);
-                    },
-                    icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                    label: const Text('Mark Paid'),
+                    onPressed: () => _markConsultationPaid(context, ref, patient),
+                    icon: const Icon(Icons.check_circle_rounded, size: 18),
+                    label: const Text('Mark Consultation Fee as Paid'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
@@ -462,7 +458,7 @@ class PatientDetailsScreen extends ConsumerWidget {
       );
     }
 
-    // Unify timeline items
+    // Build History timeline items
     final List<TimelineItemData> timelineData = [];
 
     for (final session in sessions) {
@@ -483,7 +479,7 @@ class PatientDetailsScreen extends ConsumerWidget {
       );
     }
 
-    if (patient.consultationFee != null && patient.consultationFee! > 0) {
+    if (patient.consultationPaymentStatus != null || (patient.consultationFee != null && patient.consultationFee! >= 0)) {
       timelineData.add(
         TimelineItemData(
           date: patient.registrationDate,
@@ -748,7 +744,7 @@ class PatientDetailsScreen extends ConsumerWidget {
   ) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
     final Color indicatorColor = isAdmin 
-        ? (session.paymentStatus ? AppColors.success : AppColors.warning) 
+        ? (session.paymentStatus == 'Paid' ? AppColors.success : (session.paymentStatus == 'Fee Waiver' ? Colors.purple : AppColors.warning)) 
         : AppColors.primary;
 
     return IntrinsicHeight(
@@ -817,13 +813,22 @@ class PatientDetailsScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (session.paymentStatus ? AppColors.success : AppColors.error).withOpacity(0.1),
+                                color: (session.paymentStatus == 'Paid'
+                                        ? AppColors.success
+                                        : session.paymentStatus == 'Fee Waiver'
+                                            ? Colors.purple
+                                            : AppColors.error)
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                               ),
                               child: Text(
-                                session.paymentStatus ? 'Paid' : 'Unpaid',
+                                session.paymentStatus,
                                 style: TextStyle(
-                                  color: session.paymentStatus ? AppColors.success : AppColors.error,
+                                  color: session.paymentStatus == 'Paid'
+                                      ? AppColors.success
+                                      : session.paymentStatus == 'Fee Waiver'
+                                          ? Colors.purple
+                                          : AppColors.error,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 11,
                                 ),
@@ -865,7 +870,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                         children: [
                           if (isAdmin)
                             Text(
-                              'Session Charge: Rs. ${NumberFormat('#,##0').format(session.charges)}',
+                              'Session Charge: Rs. ${NumberFormat('#,##0').format(session.charges ?? 0.0)}',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                             )
                           else
@@ -877,11 +882,11 @@ class PatientDetailsScreen extends ConsumerWidget {
                                 icon: const Icon(Icons.edit_outlined, color: AppColors.secondary, size: 18),
                                 onPressed: () => context.go('/sessions/edit/${session.sessionId}', extra: session),
                               ),
-                              if (isAdmin && !session.paymentStatus) ...[
+                              if (isAdmin && session.paymentStatus == 'Unpaid') ...[
                                 AppSizes.w4,
                                 TextButton.icon(
                                   onPressed: () async {
-                                    final updatedSession = session.copyWith(paymentStatus: true);
+                                    final updatedSession = session.copyWith(paymentStatus: 'Paid');
                                     await ref.read(sessionOperationProvider.notifier).updateSession(updatedSession);
                                   },
                                   icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
@@ -916,7 +921,7 @@ class PatientDetailsScreen extends ConsumerWidget {
   ) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
     final Color indicatorColor = isAdmin 
-        ? (bill.paymentStatus ? AppColors.success : AppColors.warning) 
+        ? (bill.paymentStatus == 'Paid' ? AppColors.success : (bill.paymentStatus == 'Fee Waiver' ? Colors.purple : AppColors.warning)) 
         : const Color(0xFFE65100);
 
     return IntrinsicHeight(
@@ -974,13 +979,22 @@ class PatientDetailsScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (bill.paymentStatus ? AppColors.success : AppColors.error).withOpacity(0.1),
+                                color: (bill.paymentStatus == 'Paid'
+                                        ? AppColors.success
+                                        : bill.paymentStatus == 'Fee Waiver'
+                                            ? Colors.purple
+                                            : AppColors.error)
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                               ),
                               child: Text(
-                                bill.paymentStatus ? 'Paid' : 'Unpaid',
+                                bill.paymentStatus,
                                 style: TextStyle(
-                                  color: bill.paymentStatus ? AppColors.success : AppColors.error,
+                                  color: bill.paymentStatus == 'Paid'
+                                      ? AppColors.success
+                                      : bill.paymentStatus == 'Fee Waiver'
+                                          ? Colors.purple
+                                          : AppColors.error,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 11,
                                 ),
@@ -1006,15 +1020,15 @@ class PatientDetailsScreen extends ConsumerWidget {
                         children: [
                           if (isAdmin)
                             Text(
-                              'Session Fee: Rs. ${NumberFormat('#,##0').format(bill.fee)}',
+                              'Session Fee: Rs. ${NumberFormat('#,##0').format(bill.fee ?? 0.0)}',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                             )
                           else
                             const SizedBox(),
-                          if (isAdmin && !bill.paymentStatus)
+                          if (isAdmin && bill.paymentStatus == 'Unpaid')
                             TextButton.icon(
                               onPressed: () async {
-                                final updatedBill = bill.copyWith(paymentStatus: true);
+                                final updatedBill = bill.copyWith(paymentStatus: 'Paid');
                                 await ref.read(massageChairBillOperationProvider.notifier).updateBill(updatedBill);
                               },
                               icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
@@ -1045,9 +1059,9 @@ class PatientDetailsScreen extends ConsumerWidget {
     bool isAdmin,
   ) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
-    final isPaid = patient.consultationPaymentStatus ?? false;
+    final String consultationStatus = patient.consultationPaymentStatus ?? 'Unpaid';
     final Color indicatorColor = isAdmin 
-        ? (isPaid ? Colors.purple : AppColors.warning) 
+        ? (consultationStatus == 'Paid' ? AppColors.success : (consultationStatus == 'Fee Waiver' ? Colors.purple : AppColors.warning)) 
         : Colors.purple;
 
     return IntrinsicHeight(
@@ -1120,13 +1134,22 @@ class PatientDetailsScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (isPaid ? AppColors.success : AppColors.error).withOpacity(0.1),
+                                color: (consultationStatus == 'Paid'
+                                        ? AppColors.success
+                                        : consultationStatus == 'Fee Waiver'
+                                            ? Colors.purple
+                                            : AppColors.error)
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                               ),
                               child: Text(
-                                isPaid ? 'Paid' : 'Unpaid',
+                                consultationStatus,
                                 style: TextStyle(
-                                  color: isPaid ? AppColors.success : AppColors.error,
+                                  color: consultationStatus == 'Paid'
+                                      ? AppColors.success
+                                      : consultationStatus == 'Fee Waiver'
+                                          ? Colors.purple
+                                          : AppColors.error,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 11,
                                 ),
@@ -1164,11 +1187,11 @@ class PatientDetailsScreen extends ConsumerWidget {
                             )
                           else
                             const SizedBox(),
-                          if (isAdmin && !isPaid)
+                          if (isAdmin && consultationStatus == 'Unpaid')
                             TextButton.icon(
                               onPressed: () async {
                                 final updatedPatient = patient.copyWith(
-                                  consultationPaymentStatus: true,
+                                  consultationPaymentStatus: 'Paid',
                                   consultationPaymentDate: DateTime.now(),
                                 );
                                 await ref.read(patientOperationProvider.notifier).updatePatient(updatedPatient);
@@ -1206,7 +1229,7 @@ class PatientDetailsScreen extends ConsumerWidget {
     DateTime selectedDate = DateTime.now();
     final durationController = TextEditingController(text: '30 minutes');
     final feeController = TextEditingController(text: '500');
-    bool paymentStatus = false;
+    String paymentStatus = 'Unpaid';
 
     showDialog(
       context: context,
@@ -1284,6 +1307,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                           AppSizes.h8,
                           TextFormField(
                             controller: feeController,
+                            readOnly: paymentStatus == 'Fee Waiver',
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               hintText: 'Enter fee amount',
@@ -1309,24 +1333,24 @@ class PatientDetailsScreen extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: InkWell(
-                                    onTap: () => setState(() => paymentStatus = false),
+                                    onTap: () => setState(() => paymentStatus = 'Unpaid'),
                                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: !paymentStatus ? AppColors.error.withOpacity(0.1) : null,
+                                        color: paymentStatus == 'Unpaid' ? AppColors.error.withOpacity(0.1) : null,
                                         borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                                       ),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            !paymentStatus ? Icons.radio_button_checked : Icons.radio_button_off,
-                                            color: !paymentStatus ? AppColors.error : AppColors.textSecondary,
+                                            paymentStatus == 'Unpaid' ? Icons.radio_button_checked : Icons.radio_button_off,
+                                            color: paymentStatus == 'Unpaid' ? AppColors.error : AppColors.textSecondary,
                                             size: 16,
                                           ),
-                                          const SizedBox(width: 6),
-                                          Text('Unpaid', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: !paymentStatus ? AppColors.error : AppColors.textSecondary)),
+                                          const SizedBox(width: 4),
+                                          Text('Unpaid', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: paymentStatus == 'Unpaid' ? AppColors.error : AppColors.textSecondary)),
                                         ],
                                       ),
                                     ),
@@ -1335,24 +1359,51 @@ class PatientDetailsScreen extends ConsumerWidget {
                                 Container(width: 1.2, height: 40, color: AppColors.border),
                                 Expanded(
                                   child: InkWell(
-                                    onTap: () => setState(() => paymentStatus = true),
+                                    onTap: () => setState(() => paymentStatus = 'Paid'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: paymentStatus == 'Paid' ? AppColors.success.withOpacity(0.1) : null,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            paymentStatus == 'Paid' ? Icons.radio_button_checked : Icons.radio_button_off,
+                                            color: paymentStatus == 'Paid' ? AppColors.success : AppColors.textSecondary,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text('Paid', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: paymentStatus == 'Paid' ? AppColors.success : AppColors.textSecondary)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Container(width: 1.2, height: 40, color: AppColors.border),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => setState(() {
+                                      paymentStatus = 'Fee Waiver';
+                                      feeController.text = '0';
+                                    }),
                                     borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: paymentStatus ? AppColors.success.withOpacity(0.1) : null,
+                                        color: paymentStatus == 'Fee Waiver' ? Colors.purple.withOpacity(0.1) : null,
                                         borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                                       ),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            paymentStatus ? Icons.radio_button_checked : Icons.radio_button_off,
-                                            color: paymentStatus ? AppColors.success : AppColors.textSecondary,
+                                            paymentStatus == 'Fee Waiver' ? Icons.radio_button_checked : Icons.radio_button_off,
+                                            color: paymentStatus == 'Fee Waiver' ? Colors.purple : AppColors.textSecondary,
                                             size: 16,
                                           ),
-                                          const SizedBox(width: 6),
-                                          Text('Paid', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: paymentStatus ? AppColors.success : AppColors.textSecondary)),
+                                          const SizedBox(width: 4),
+                                          Text('Fee Waiver', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: paymentStatus == 'Fee Waiver' ? Colors.purple : AppColors.textSecondary)),
                                         ],
                                       ),
                                     ),
@@ -1420,6 +1471,21 @@ class PatientDetailsScreen extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+
+  Future<void> _markConsultationPaid(BuildContext context, WidgetRef ref, PatientModel patient) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final updatedPatient = patient.copyWith(
+      consultationPaymentStatus: 'Paid',
+      consultationPaymentDate: DateTime.now(),
+    );
+    await ref.read(patientOperationProvider.notifier).updatePatient(updatedPatient);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Consultation fee marked as Paid.'),
+        backgroundColor: AppColors.success,
+      ),
     );
   }
 

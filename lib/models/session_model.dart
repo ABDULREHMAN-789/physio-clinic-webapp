@@ -6,7 +6,7 @@ class SessionModel {
   final DateTime sessionDate;
   final String treatmentNotes;
   final double charges;
-  final bool paymentStatus; // true = Paid, false = Unpaid
+  final String paymentStatus; // 'Paid', 'Unpaid', 'Fee Waiver'
   final String nextRecommendation;
   final String? therapistId;
   final String? therapistName;
@@ -29,7 +29,7 @@ class SessionModel {
     DateTime? sessionDate,
     String? treatmentNotes,
     double? charges,
-    bool? paymentStatus,
+    String? paymentStatus,
     String? nextRecommendation,
     String? therapistId,
     String? therapistName,
@@ -73,13 +73,19 @@ class SessionModel {
       return DateTime.now();
     }
 
+    String parsePaymentStatus(dynamic status) {
+      if (status is bool) return status ? 'Paid' : 'Unpaid';
+      if (status is String && status.isNotEmpty) return status;
+      return 'Unpaid';
+    }
+
     return SessionModel(
       sessionId: map['sessionId'] ?? '',
       patientId: map['patientId'] ?? '',
       sessionDate: parseDate(map['sessionDate']),
       treatmentNotes: map['treatmentNotes'] ?? '',
       charges: map['charges'] is num ? (map['charges'] as num).toDouble() : 0.0,
-      paymentStatus: map['paymentStatus'] ?? false,
+      paymentStatus: parsePaymentStatus(map['paymentStatus']),
       nextRecommendation: map['nextRecommendation'] ?? '',
       therapistId: map['therapistId'],
       therapistName: map['therapistName'],

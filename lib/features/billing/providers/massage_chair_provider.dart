@@ -82,7 +82,7 @@ class MassageChairBillOperationNotifier extends StateNotifier<MassageChairBillOp
           performedByName: _currentUser.fullName,
           role: _currentUser.role,
           timestamp: DateTime.now(),
-          details: 'Updated massage chair bill for ${bill.customerName}. Payment: ${bill.paymentStatus ? 'Paid' : 'Unpaid'}',
+          details: 'Updated massage chair bill for ${bill.customerName}. Payment: ${bill.paymentStatus}',
         ));
       }
       state = state.copyWith(isLoading: false, isSuccess: true);

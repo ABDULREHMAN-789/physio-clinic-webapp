@@ -7,7 +7,7 @@ class MassageChairBillModel {
   final DateTime sessionDate;
   final String duration; // Optional, e.g., "30 minutes"
   final double fee;
-  final bool paymentStatus; // true = Paid, false = Unpaid
+  final String paymentStatus; // 'Paid', 'Unpaid', 'Fee Waiver'
   final DateTime createdAt;
 
   MassageChairBillModel({
@@ -28,7 +28,7 @@ class MassageChairBillModel {
     DateTime? sessionDate,
     String? duration,
     double? fee,
-    bool? paymentStatus,
+    String? paymentStatus,
     DateTime? createdAt,
   }) {
     return MassageChairBillModel(
@@ -68,6 +68,12 @@ class MassageChairBillModel {
       return DateTime.now();
     }
 
+    String parsePaymentStatus(dynamic status) {
+      if (status is bool) return status ? 'Paid' : 'Unpaid';
+      if (status is String && status.isNotEmpty) return status;
+      return 'Unpaid';
+    }
+
     return MassageChairBillModel(
       billId: map['billId'] ?? '',
       customerId: map['customerId'] ?? '',
@@ -75,7 +81,7 @@ class MassageChairBillModel {
       sessionDate: parseDate(map['sessionDate']),
       duration: map['duration'] ?? '',
       fee: map['fee'] is num ? (map['fee'] as num).toDouble() : 0.0,
-      paymentStatus: map['paymentStatus'] ?? false,
+      paymentStatus: parsePaymentStatus(map['paymentStatus']),
       createdAt: parseDate(map['createdAt']),
     );
   }

@@ -101,21 +101,26 @@ class DashboardScreen extends ConsumerWidget {
     // Calculations
     final int totalPatients = patients.length;
     final int totalSessions = sessions.length;
-    final double totalRevenue = sessions.fold(0.0, (sum, s) => sum + s.charges);
-    final double pendingDues = sessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
-    final double totalEarnings = totalRevenue - pendingDues;
+    final int massageChairSessionsCount = massageChairBills.length;
+    final int consultationCount = patients
+        .where((p) => (p.consultationFee != null && p.consultationFee! >= 0) || (p.consultationPaymentStatus != null && p.consultationPaymentStatus!.isNotEmpty))
+        .length;
+
+    final double totalRevenue = sessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
+    final double pendingDues = sessions.where((s) => s.paymentStatus == 'Unpaid').fold(0.0, (sum, s) => sum + s.charges);
+    final double totalEarnings = totalRevenue;
 
     // Consultation calculations
     final double consultationRevenue = patients
-        .where((p) => p.consultationPaymentStatus ?? false)
+        .where((p) => p.consultationPaymentStatus == 'Paid')
         .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
     final double consultationPending = patients
-        .where((p) => !(p.consultationPaymentStatus ?? false))
+        .where((p) => (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid' && (p.consultationFee != null && p.consultationFee! > 0))
         .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
     final double combinedPendingDues = pendingDues + (isAdmin ? consultationPending : 0.0);
 
     // Massage chair calculations (admin only)
-    final double massageChairRevenue = massageChairBills.where((b) => b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee);
+    final double massageChairRevenue = massageChairBills.where((b) => b.paymentStatus == 'Paid').fold(0.0, (sum, b) => sum + b.fee);
     final double combinedEarnings = totalEarnings + massageChairRevenue + consultationRevenue;
 
     // Slice recent activities (Max 4 logs)
@@ -205,6 +210,24 @@ class DashboardScreen extends ConsumerWidget {
                   color: AppColors.secondary,
                   gradient: null,
                 ),
+                if (isAdmin) ...[
+                  _buildStatCard(
+                    title: 'Massage Chair Sessions',
+                    value: massageChairSessionsCount.toString(),
+                    subtitle: 'Chair sessions logged',
+                    icon: Icons.chair_rounded,
+                    color: const Color(0xFFE65100),
+                    gradient: null,
+                  ),
+                  _buildStatCard(
+                    title: 'Consultation Records',
+                    value: consultationCount.toString(),
+                    subtitle: 'Consultations recorded',
+                    icon: Icons.medical_services_rounded,
+                    color: Colors.purple,
+                    gradient: null,
+                  ),
+                ],
                 _buildStatCard(
                   title: 'Therapy Revenue',
                   value: 'Rs. ${NumberFormat('#,##0').format(totalEarnings)}',
@@ -218,7 +241,7 @@ class DashboardScreen extends ConsumerWidget {
                     title: 'Massage Chair Revenue',
                     value: 'Rs. ${NumberFormat('#,##0').format(massageChairRevenue)}',
                     subtitle: 'Chair sessions collected',
-                    icon: Icons.chair_rounded,
+                    icon: Icons.chair_alt_rounded,
                     color: const Color(0xFFE65100),
                     gradient: null,
                   ),
@@ -258,14 +281,14 @@ class DashboardScreen extends ConsumerWidget {
             builder: (context) {
               final currentUser = authState.userModel;
               final double percentage = currentUser?.revenuePercentage ?? 0.0;
-              final double totalTherapyRevenue = sessions.fold(0.0, (sum, s) => sum + s.charges);
+              final double totalTherapyRevenue = sessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
               final double calculatedSalary = totalTherapyRevenue * (percentage / 100);
               final int sessionsCompleted = sessions.length;
               final now = DateTime.now();
               final currentMonthSessions = sessions.where((s) => s.sessionDate.year == now.year && s.sessionDate.month == now.month);
-              final double currentMonthRevenue = currentMonthSessions.fold(0.0, (sum, s) => sum + s.charges);
+              final double currentMonthRevenue = currentMonthSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
               final double currentMonthSalary = currentMonthRevenue * (percentage / 100);
-              final double totalPaidRevenue = sessions.where((s) => s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
+              final double totalPaidRevenue = totalTherapyRevenue;
               final double totalEarned = totalPaidRevenue * (percentage / 100);
 
               return _buildTherapistSalaryCard(
@@ -451,18 +474,18 @@ class DashboardScreen extends ConsumerWidget {
       final m = months[i];
       final monthSessions = sessions.where((s) => s.sessionDate.year == m.year && s.sessionDate.month == m.month);
       // Collect only paid revenue to draw clean graphical data points
-      final double paidRevenue = monthSessions.where((s) => s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
+      final double paidRevenue = monthSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
       
       final double mcPaidRevenue = isAdmin
           ? massageChairBills
-              .where((b) => b.sessionDate.year == m.year && b.sessionDate.month == m.month && b.paymentStatus)
+              .where((b) => b.sessionDate.year == m.year && b.sessionDate.month == m.month && b.paymentStatus == 'Paid')
               .fold(0.0, (sum, b) => sum + b.fee)
           : 0.0;
 
       final double consultationPaidRevenue = isAdmin
           ? patients
               .where((p) =>
-                  p.consultationPaymentStatus == true &&
+                  p.consultationPaymentStatus == 'Paid' &&
                   p.consultationPaymentDate != null &&
                   p.consultationPaymentDate!.year == m.year &&
                   p.consultationPaymentDate!.month == m.month)
@@ -763,12 +786,25 @@ class DashboardScreen extends ConsumerWidget {
                         leading: Container(
                           padding: const EdgeInsets.all(AppSizes.p8),
                           decoration: BoxDecoration(
-                            color: (s.paymentStatus ? AppColors.success : AppColors.error).withOpacity(0.08),
+                            color: (s.paymentStatus == 'Paid'
+                                    ? AppColors.success
+                                    : s.paymentStatus == 'Fee Waiver'
+                                        ? Colors.purple
+                                        : AppColors.error)
+                                .withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            s.paymentStatus ? Icons.check_rounded : Icons.pending_rounded,
-                            color: s.paymentStatus ? AppColors.success : AppColors.error,
+                            s.paymentStatus == 'Paid'
+                                ? Icons.check_rounded
+                                : s.paymentStatus == 'Fee Waiver'
+                                    ? Icons.card_giftcard_rounded
+                                    : Icons.pending_rounded,
+                            color: s.paymentStatus == 'Paid'
+                                ? AppColors.success
+                                : s.paymentStatus == 'Fee Waiver'
+                                    ? Colors.purple
+                                    : AppColors.error,
                             size: 16,
                           ),
                         ),
@@ -1043,7 +1079,7 @@ class DashboardScreen extends ConsumerWidget {
                             ],
                             rows: staff.map((therapist) {
                               final therapistSessions = sessions.where((s) => s.therapistId == therapist.userId);
-                              final double revenueGenerated = therapistSessions.fold(0.0, (sum, s) => sum + s.charges);
+                              final double revenueGenerated = therapistSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
                               final int count = therapistSessions.length;
                               final double calculatedSalary = revenueGenerated * (therapist.revenuePercentage / 100);
 

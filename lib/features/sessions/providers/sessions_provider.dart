@@ -88,7 +88,7 @@ class SessionOperationNotifier extends StateNotifier<SessionOperationState> {
           performedByName: _currentUser.fullName,
           role: _currentUser.role,
           timestamp: DateTime.now(),
-          details: 'Updated session record for patient ID: ${session.patientId}. Payment Status: ${session.paymentStatus ? 'Paid' : 'Unpaid'}',
+          details: 'Updated session record for patient ID: ${session.patientId}. Payment Status: ${session.paymentStatus}',
         ));
       }
       state = state.copyWith(isLoading: false, isSuccess: true);
@@ -121,8 +121,8 @@ final sessionOperationProvider = StateNotifierProvider<SessionOperationNotifier,
 
 // Selected Patient filter for sessions screen
 final selectedPatientFilterProvider = StateProvider<String?>((ref) => null);
-// Paid status filter for sessions screen (null = All, true = Paid, false = Unpaid)
-final paymentStatusFilterProvider = StateProvider<bool?>((ref) => null);
+// Paid status filter for sessions screen (null = All, 'Paid', 'Unpaid', 'Fee Waiver')
+final paymentStatusFilterProvider = StateProvider<String?>((ref) => null);
 
 final filteredSessionsProvider = Provider<AsyncValue<List<SessionModel>>>((ref) {
   final sessionsAsync = ref.watch(sessionsStreamProvider);
@@ -134,7 +134,7 @@ final filteredSessionsProvider = Provider<AsyncValue<List<SessionModel>>>((ref) 
     if (patientId != null && patientId.isNotEmpty) {
       results = results.where((s) => s.patientId == patientId).toList();
     }
-    if (paymentStatus != null) {
+    if (paymentStatus != null && paymentStatus.isNotEmpty) {
       results = results.where((s) => s.paymentStatus == paymentStatus).toList();
     }
     return results;

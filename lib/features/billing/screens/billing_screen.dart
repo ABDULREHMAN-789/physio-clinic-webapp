@@ -11,8 +11,8 @@ import '../../sessions/providers/sessions_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/massage_chair_provider.dart';
 
-// Filter state: false = Unpaid Dues Only, true = Paid Only, null = All
-final billingFilterProvider = StateProvider<bool?>((ref) => false);
+// Filter state: 'Unpaid' = Unpaid Dues Only, 'Paid' = Paid Only, 'Fee Waiver' = Fee Waiver Only, null = All
+final billingFilterProvider = StateProvider<String?>((ref) => 'Unpaid');
 final billingSearchProvider = StateProvider<String>((ref) => '');
 // Service type filter: 'all', 'therapy', 'massage_chair'
 final billingServiceFilterProvider = StateProvider<String>((ref) => 'all');
@@ -46,21 +46,23 @@ class BillingScreen extends ConsumerWidget {
 
                 // Therapy metrics
                 final totalCharges = sessions.fold(0.0, (sum, s) => sum + s.charges);
-                final unpaidDues = sessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
-                final receivedRevenue = totalCharges - unpaidDues;
+                final unpaidDues = sessions.where((s) => s.paymentStatus == 'Unpaid').fold(0.0, (sum, s) => sum + s.charges);
+                final receivedRevenue = sessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
 
                 // Massage chair metrics (admin only)
                 final mcTotal = massageChairBills.fold(0.0, (sum, b) => sum + b.fee);
-                final mcUnpaid = massageChairBills.where((b) => !b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee);
-                final mcReceived = mcTotal - mcUnpaid;
+                final mcUnpaid = massageChairBills.where((b) => b.paymentStatus == 'Unpaid').fold(0.0, (sum, b) => sum + b.fee);
+                final mcReceived = massageChairBills.where((b) => b.paymentStatus == 'Paid').fold(0.0, (sum, b) => sum + b.fee);
 
                 // Consultation metrics (admin only)
-                final consultationFeePatients = patients.where((p) => p.consultationFee != null && p.consultationFee! > 0);
-                final double consultationTotal = consultationFeePatients.fold(0.0, (sum, p) => sum + p.consultationFee!);
+                final consultationFeePatients = patients.where((p) => p.consultationPaymentStatus != null || (p.consultationFee != null && p.consultationFee! >= 0));
+                final double consultationTotal = consultationFeePatients.fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
                 final double consultationReceived = consultationFeePatients
-                    .where((p) => p.consultationPaymentStatus == true)
-                    .fold(0.0, (sum, p) => sum + p.consultationFee!);
-                final double consultationUnpaid = consultationTotal - consultationReceived;
+                    .where((p) => p.consultationPaymentStatus == 'Paid')
+                    .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+                final double consultationUnpaid = consultationFeePatients
+                    .where((p) => (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid')
+                    .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSizes.p24),
@@ -325,8 +327,9 @@ class BillingScreen extends ConsumerWidget {
                                 ),
                                 child: Row(
                                   children: [
-                                    _buildFilterTab(context, ref, 'Dues Only', false, activeFilter == false),
-                                    _buildFilterTab(context, ref, 'Paid Only', true, activeFilter == true),
+                                    _buildFilterTab(context, ref, 'Dues Only', 'Unpaid', activeFilter == 'Unpaid'),
+                                    _buildFilterTab(context, ref, 'Paid Only', 'Paid', activeFilter == 'Paid'),
+                                    _buildFilterTab(context, ref, 'Fee Waiver', 'Fee Waiver', activeFilter == 'Fee Waiver'),
                                     _buildFilterTab(context, ref, 'All', null, activeFilter == null),
                                   ],
                                 ),
@@ -385,11 +388,11 @@ class BillingScreen extends ConsumerWidget {
 
                           // Apply filters to consultation records
                           var filteredConsultations = patients
-                              .where((p) => p.consultationFee != null && p.consultationFee! > 0)
+                              .where((p) => (p.consultationFee != null && p.consultationFee! > 0) || p.consultationPaymentStatus == 'Fee Waiver')
                               .toList();
                           if (activeFilter != null) {
                             filteredConsultations = filteredConsultations
-                                .where((p) => (p.consultationPaymentStatus ?? false) == activeFilter)
+                                .where((p) => (p.consultationPaymentStatus ?? 'Unpaid') == activeFilter)
                                 .toList();
                           }
                           if (searchQuery.isNotEmpty) {
@@ -442,7 +445,7 @@ class BillingScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String label,
-    bool? filterValue,
+    String? filterValue,
     bool isSelected,
   ) {
     return TextButton(
@@ -560,9 +563,9 @@ class BillingScreen extends ConsumerWidget {
         serviceType: 'Therapy',
         details: session.treatmentNotes,
         amount: session.charges,
-        isPaid: session.paymentStatus,
+        paymentStatus: session.paymentStatus,
         onMarkPaid: () async {
-          final updatedSession = session.copyWith(paymentStatus: true);
+          final updatedSession = session.copyWith(paymentStatus: 'Paid');
           await ref.read(sessionOperationProvider.notifier).updateSession(updatedSession);
         },
       ));
@@ -577,9 +580,9 @@ class BillingScreen extends ConsumerWidget {
         serviceType: 'Massage Chair',
         details: bill.duration.isNotEmpty ? 'Duration: ${bill.duration}' : 'Walk-in session',
         amount: bill.fee,
-        isPaid: bill.paymentStatus,
+        paymentStatus: bill.paymentStatus,
         onMarkPaid: () async {
-          final updatedBill = bill.copyWith(paymentStatus: true);
+          final updatedBill = bill.copyWith(paymentStatus: 'Paid');
           await ref.read(massageChairBillOperationProvider.notifier).updateBill(updatedBill);
         },
       ));
@@ -594,10 +597,10 @@ class BillingScreen extends ConsumerWidget {
         serviceType: 'Consultation',
         details: p.consultationNotes ?? 'Initial Consultation',
         amount: p.consultationFee ?? 0.0,
-        isPaid: p.consultationPaymentStatus ?? false,
+        paymentStatus: p.consultationPaymentStatus ?? 'Unpaid',
         onMarkPaid: () async {
           final updatedPatient = p.copyWith(
-            consultationPaymentStatus: true,
+            consultationPaymentStatus: 'Paid',
             consultationPaymentDate: DateTime.now(),
           );
           await ref.read(patientOperationProvider.notifier).updatePatient(updatedPatient);
@@ -625,6 +628,9 @@ class BillingScreen extends ConsumerWidget {
         badgeColor = AppColors.primaryLight;
         textColor = AppColors.primaryDark;
       }
+
+      final isPaid = row.paymentStatus == 'Paid';
+      final isFeeWaiver = row.paymentStatus == 'Fee Waiver';
 
       return DataRow(
         cells: [
@@ -698,13 +704,22 @@ class BillingScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: (row.isPaid ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+                color: (isPaid
+                        ? AppColors.success
+                        : isFeeWaiver
+                            ? Colors.purple
+                            : AppColors.error)
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
               ),
               child: Text(
-                row.isPaid ? 'Paid' : 'Unpaid',
+                row.paymentStatus,
                 style: TextStyle(
-                  color: row.isPaid ? AppColors.success : AppColors.error,
+                  color: isPaid
+                      ? AppColors.success
+                      : isFeeWaiver
+                          ? Colors.purple
+                          : AppColors.error,
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
                 ),
@@ -712,17 +727,19 @@ class BillingScreen extends ConsumerWidget {
             ),
           ),
           DataCell(
-            row.isPaid
+            isPaid
                 ? const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 22)
-                : ElevatedButton.icon(
-                    onPressed: row.onMarkPaid,
-                    icon: const Icon(Icons.payment_rounded, size: 14),
-                    label: const Text('Mark Paid'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.success,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
-                  ),
+                : isFeeWaiver
+                    ? const Icon(Icons.card_giftcard_rounded, color: Colors.purple, size: 22)
+                    : ElevatedButton.icon(
+                        onPressed: row.onMarkPaid,
+                        icon: const Icon(Icons.payment_rounded, size: 14),
+                        label: const Text('Mark Paid'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                      ),
           ),
         ],
       );
@@ -766,7 +783,7 @@ class _BillingRowData {
   final String serviceType;
   final String details;
   final double amount;
-  final bool isPaid;
+  final String paymentStatus;
   final Future<void> Function() onMarkPaid;
 
   _BillingRowData({
@@ -776,7 +793,7 @@ class _BillingRowData {
     required this.serviceType,
     required this.details,
     required this.amount,
-    required this.isPaid,
+    required this.paymentStatus,
     required this.onMarkPaid,
   });
 }

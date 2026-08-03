@@ -36,7 +36,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
 
   String? _selectedPatientId;
   DateTime _selectedDate = DateTime.now();
-  bool _paymentStatus = false;
+  String _paymentStatus = 'Unpaid';
   late bool _isEditMode;
 
   @override
@@ -394,6 +394,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                                     controller: _chargesController,
                                     keyboardType: TextInputType.number,
                                     textInputAction: TextInputAction.next,
+                                    readOnly: _paymentStatus == 'Fee Waiver',
                                     decoration: const InputDecoration(
                                       hintText: 'E.g., 2000',
                                       prefixIcon: Icon(Icons.payments_outlined, size: 20),
@@ -414,38 +415,110 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                                   ),
                                   AppSizes.h8,
                                   Container(
-                                    height: 52,
-                                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                                     decoration: BoxDecoration(
-                                      color: _paymentStatus ? AppColors.success.withOpacity(0.06) : AppColors.error.withOpacity(0.06),
-                                      border: Border.all(
-                                        color: _paymentStatus ? AppColors.success.withOpacity(0.3) : AppColors.error.withOpacity(0.3),
-                                        width: 1.2,
-                                      ),
                                       borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                                      border: Border.all(color: AppColors.border, width: 1.2),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          _paymentStatus ? 'PAID' : 'UNPAID',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: _paymentStatus ? AppColors.success : AppColors.error,
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () => setState(() => _paymentStatus = 'Unpaid'),
+                                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              decoration: BoxDecoration(
+                                                color: _paymentStatus == 'Unpaid' ? AppColors.error.withOpacity(0.1) : null,
+                                                borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    _paymentStatus == 'Unpaid' ? Icons.radio_button_checked : Icons.radio_button_off,
+                                                    color: _paymentStatus == 'Unpaid' ? AppColors.error : AppColors.textSecondary,
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'Unpaid',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 12,
+                                                      color: _paymentStatus == 'Unpaid' ? AppColors.error : AppColors.textSecondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                        Switch(
-                                          value: _paymentStatus,
-                                          activeThumbColor: AppColors.success,
-                                          activeTrackColor: AppColors.success.withOpacity(0.2),
-                                          inactiveThumbColor: AppColors.error,
-                                          inactiveTrackColor: AppColors.error.withOpacity(0.2),
-                                          onChanged: (val) {
-                                            setState(() {
-                                              _paymentStatus = val;
-                                            });
-                                          },
+                                        Container(width: 1.2, height: 48, color: AppColors.border),
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () => setState(() => _paymentStatus = 'Paid'),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              decoration: BoxDecoration(
+                                                color: _paymentStatus == 'Paid' ? AppColors.success.withOpacity(0.1) : null,
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    _paymentStatus == 'Paid' ? Icons.radio_button_checked : Icons.radio_button_off,
+                                                    color: _paymentStatus == 'Paid' ? AppColors.success : AppColors.textSecondary,
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'Paid',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 12,
+                                                      color: _paymentStatus == 'Paid' ? AppColors.success : AppColors.textSecondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(width: 1.2, height: 48, color: AppColors.border),
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () => setState(() {
+                                              _paymentStatus = 'Fee Waiver';
+                                              _chargesController.text = '0';
+                                            }),
+                                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              decoration: BoxDecoration(
+                                                color: _paymentStatus == 'Fee Waiver' ? Colors.purple.withOpacity(0.1) : null,
+                                                borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    _paymentStatus == 'Fee Waiver' ? Icons.radio_button_checked : Icons.radio_button_off,
+                                                    color: _paymentStatus == 'Fee Waiver' ? Colors.purple : AppColors.textSecondary,
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'Fee Waiver',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 9,
+                                                      color: _paymentStatus == 'Fee Waiver' ? Colors.purple : AppColors.textSecondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),

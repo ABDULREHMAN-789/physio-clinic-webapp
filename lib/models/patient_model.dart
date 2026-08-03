@@ -21,9 +21,11 @@ class PatientModel {
   final String? tempAssignmentReason;
   final String customerType; // 'therapy' or 'massage_chair'
   final double? consultationFee;
-  final bool? consultationPaymentStatus;
+  final String? consultationPaymentStatus;
   final DateTime? consultationPaymentDate;
   final String? consultationNotes;
+  final String? paymentType; // 'feeWaiver' or 'regular'
+  final bool? isFeeWaiver;
 
   PatientModel({
     required this.patientId,
@@ -49,7 +51,14 @@ class PatientModel {
     this.consultationPaymentStatus,
     this.consultationPaymentDate,
     this.consultationNotes,
+    this.paymentType,
+    this.isFeeWaiver,
   });
+
+  bool get isFeeWaiverPatient =>
+      isFeeWaiver == true ||
+      paymentType == 'feeWaiver' ||
+      consultationPaymentStatus == 'Fee Waiver';
 
   PatientModel copyWith({
     String? patientId,
@@ -72,9 +81,11 @@ class PatientModel {
     String? tempAssignmentReason,
     String? customerType,
     double? consultationFee,
-    bool? consultationPaymentStatus,
+    String? consultationPaymentStatus,
     DateTime? consultationPaymentDate,
     String? consultationNotes,
+    String? paymentType,
+    bool? isFeeWaiver,
   }) {
     return PatientModel(
       patientId: patientId ?? this.patientId,
@@ -100,10 +111,13 @@ class PatientModel {
       consultationPaymentStatus: consultationPaymentStatus ?? this.consultationPaymentStatus,
       consultationPaymentDate: consultationPaymentDate ?? this.consultationPaymentDate,
       consultationNotes: consultationNotes ?? this.consultationNotes,
+      paymentType: paymentType ?? this.paymentType,
+      isFeeWaiver: isFeeWaiver ?? this.isFeeWaiver,
     );
   }
 
   Map<String, dynamic> toMap() {
+    final computedFeeWaiver = isFeeWaiver == true || consultationPaymentStatus == 'Fee Waiver' || paymentType == 'feeWaiver';
     return {
       'patientId': patientId,
       'fullName': fullName,
@@ -128,6 +142,8 @@ class PatientModel {
       'consultationPaymentStatus': consultationPaymentStatus,
       'consultationPaymentDate': consultationPaymentDate,
       'consultationNotes': consultationNotes,
+      'paymentType': paymentType ?? (computedFeeWaiver ? 'feeWaiver' : 'regular'),
+      'isFeeWaiver': computedFeeWaiver,
     };
   }
 
@@ -155,6 +171,12 @@ class PatientModel {
       return null;
     }
 
+    String? parsePaymentStatus(dynamic status) {
+      if (status == null) return null;
+      if (status is bool) return status ? 'Paid' : 'Unpaid';
+      return status.toString();
+    }
+
     return PatientModel(
       patientId: map['patientId'] ?? '',
       fullName: map['fullName'] ?? '',
@@ -175,10 +197,12 @@ class PatientModel {
       tempAssignmentEndDate: parseNullableDate(map['tempAssignmentEndDate']),
       tempAssignmentReason: map['tempAssignmentReason'],
       customerType: map['customerType'] ?? 'therapy',
-      consultationFee: map['consultationFee'] != null ? (map['consultationFee'] as num).toDouble() : null,
-      consultationPaymentStatus: map['consultationPaymentStatus'] as bool?,
+      consultationFee: map['consultationFee'] != null ? (map['consultationFee'] as num).toDouble() : 0.0,
+      consultationPaymentStatus: parsePaymentStatus(map['consultationPaymentStatus']),
       consultationPaymentDate: parseNullableDate(map['consultationPaymentDate']),
       consultationNotes: map['consultationNotes'] as String?,
+      paymentType: map['paymentType'] as String?,
+      isFeeWaiver: map['isFeeWaiver'] as bool?,
     );
   }
 
@@ -207,6 +231,8 @@ class PatientModel {
       consultationPaymentStatus: consultationPaymentStatus,
       consultationPaymentDate: consultationPaymentDate,
       consultationNotes: consultationNotes,
+      paymentType: paymentType,
+      isFeeWaiver: isFeeWaiver,
     );
   }
 }

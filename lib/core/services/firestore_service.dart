@@ -407,7 +407,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 80)),
         treatmentNotes: 'Initial Assessment. Lumbar spine range of motion restricted. Muscle spasm in erector spinae. Administered deep tissue release and moist heat.',
         charges: 2000.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         nextRecommendation: 'Next session in 3 days. Focus on core activation.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -418,7 +418,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 75)),
         treatmentNotes: 'Lumbar stabilization exercises introduced. Patient tolerated exercises well. Spasms reduced. Administered manual traction.',
         charges: 2000.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         nextRecommendation: 'Continue core stabilization twice weekly.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -429,7 +429,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 12)),
         treatmentNotes: 'Lumbar stabilization exercises progressed to dynamic postures. Pain scale reported at 3/10 (down from 8/10 initially). Dry needling done on gluteus medius.',
         charges: 2500.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         nextRecommendation: 'Next session in one week.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -440,7 +440,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 2)),
         treatmentNotes: 'Patient complained of minor stiffness after traveling. Applied heat, myofascial release on lower back, and light stretches.',
         charges: 2000.0,
-        paymentStatus: false, // Unpaid
+        paymentStatus: 'Unpaid', // Unpaid
         nextRecommendation: 'Avoid heavy sitting. Follow home exercise plan.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -453,7 +453,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 55)),
         treatmentNotes: 'Shoulder impingement tests positive. Administered cold pack, ultrasound therapy, and active-assisted range of motion.',
         charges: 2500.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         nextRecommendation: 'Ice pack at home 3 times daily. Next session in 4 days.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -464,7 +464,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 48)),
         treatmentNotes: 'Active elevation improved from 110 to 135 degrees. Scapular mobilization performed. Light isometric rotator cuff exercises started.',
         charges: 2500.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         nextRecommendation: 'Progress to light yellow Theraband exercises.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -475,7 +475,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 5)),
         treatmentNotes: 'Rotator cuff strengthening with Theraband. Scapular stability exercises. Shoulder pain minimal during active movements.',
         charges: 3000.0,
-        paymentStatus: false, // Unpaid
+        paymentStatus: 'Unpaid', // Unpaid
         nextRecommendation: 'Gradual return to light tennis drills. Reassess in 5 days.',
         therapistId: 'mock-therapist',
         therapistName: 'John Therapist',
@@ -488,7 +488,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 40)),
         treatmentNotes: 'Knee flexion at 90 degrees, extension at 5 degrees. Focus on patellar gliding and quadriceps sets with neuromuscular stimulation.',
         charges: 2000.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         nextRecommendation: 'Next session in 2 days.',
         therapistId: 'mock-therapist-b',
         therapistName: 'Sarah Therapist',
@@ -499,7 +499,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 35)),
         treatmentNotes: 'Knee flexion improved to 105 degrees, extension at 2 degrees. Introduced stationary cycling (no resistance) and mini-squats.',
         charges: 2000.0,
-        paymentStatus: false, // Unpaid
+        paymentStatus: 'Unpaid', // Unpaid
         nextRecommendation: 'Continue home range of motion and cycling.',
         therapistId: 'mock-therapist-b',
         therapistName: 'Sarah Therapist',
@@ -512,7 +512,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 15)),
         treatmentNotes: 'Arthritic knee pain management. Applied moist heat, did gentle passive hamstring stretching, and quad-strengthening straight leg raises.',
         charges: 1500.0,
-        paymentStatus: false, // Unpaid
+        paymentStatus: 'Unpaid', // Unpaid
         nextRecommendation: 'Walk 10 mins daily on flat surfaces. Next session in 1 week.',
         therapistId: 'mock-therapist-b',
         therapistName: 'Sarah Therapist',
@@ -556,7 +556,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 20)),
         duration: '30 minutes',
         fee: 500.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         createdAt: now.subtract(const Duration(days: 20)),
       ),
       MassageChairBillModel(
@@ -566,7 +566,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 7)),
         duration: '45 minutes',
         fee: 700.0,
-        paymentStatus: false,
+        paymentStatus: 'Unpaid',
         createdAt: now.subtract(const Duration(days: 7)),
       ),
       MassageChairBillModel(
@@ -576,7 +576,7 @@ class MockFirestoreServiceImpl implements FirestoreService {
         sessionDate: now.subtract(const Duration(days: 10)),
         duration: '30 minutes',
         fee: 500.0,
-        paymentStatus: true,
+        paymentStatus: 'Paid',
         createdAt: now.subtract(const Duration(days: 10)),
       ),
     ]);

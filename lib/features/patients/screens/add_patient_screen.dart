@@ -42,7 +42,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   // Consultation Fee fields
   final _consultationFeeController = TextEditingController();
   final _consultationNotesController = TextEditingController();
-  bool _consultationPaymentStatus = false;
+  String _consultationPaymentStatus = 'Unpaid';
   DateTime? _consultationPaymentDate;
   
   String _selectedGender = 'Male';
@@ -55,7 +55,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   
   // Massage chair billing
   DateTime _massageSessionDate = DateTime.now();
-  bool _massagePaymentStatus = false; // Unpaid by default
+  String _massagePaymentStatus = 'Unpaid'; // Unpaid by default
 
   @override
   void initState() {
@@ -88,9 +88,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       _customerType = p.customerType;
       
       if (p.consultationFee != null) {
-        _consultationFeeController.text = p.consultationFee!.toString();
+        _consultationFeeController.text = p.consultationFee!.toStringAsFixed(0);
       }
-      _consultationPaymentStatus = p.consultationPaymentStatus ?? false;
+      _consultationPaymentStatus = p.consultationPaymentStatus ?? 'Unpaid';
       _consultationPaymentDate = p.consultationPaymentDate;
       _consultationNotesController.text = p.consultationNotes ?? '';
     }
@@ -139,7 +139,14 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     }
   }
 
-  Widget _buildPaymentStatusToggle() {
+  Widget _buildPaymentStatusToggle({
+    required String currentStatus,
+    required ValueChanged<String> onChanged,
+  }) {
+    final isUnpaid = currentStatus == 'Unpaid';
+    final isPaid = currentStatus == 'Paid';
+    final isFeeWaiver = currentStatus == 'Fee Waiver';
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
@@ -149,31 +156,29 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         children: [
           Expanded(
             child: InkWell(
-              onTap: () => setState(() {
-                _consultationPaymentStatus = false;
-                _consultationPaymentDate = null;
-              }),
+              onTap: () => onChanged('Unpaid'),
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: !_consultationPaymentStatus ? AppColors.error.withOpacity(0.1) : null,
+                  color: isUnpaid ? AppColors.error.withOpacity(0.1) : null,
                   borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      !_consultationPaymentStatus ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: !_consultationPaymentStatus ? AppColors.error : AppColors.textSecondary,
-                      size: 18,
+                      isUnpaid ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: isUnpaid ? AppColors.error : AppColors.textSecondary,
+                      size: 16,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
                       'Unpaid',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: !_consultationPaymentStatus ? AppColors.error : AppColors.textSecondary,
+                        fontSize: 12,
+                        color: isUnpaid ? AppColors.error : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -184,33 +189,60 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           Container(width: 1.2, height: 48, color: AppColors.border),
           Expanded(
             child: InkWell(
-              onTap: () => setState(() {
-                _consultationPaymentStatus = true;
-                if (_consultationPaymentDate == null) {
-                  _consultationPaymentDate = DateTime.now();
-                }
-              }),
+              onTap: () => onChanged('Paid'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: isPaid ? AppColors.success.withOpacity(0.1) : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isPaid ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: isPaid ? AppColors.success : AppColors.textSecondary,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Paid',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: isPaid ? AppColors.success : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Container(width: 1.2, height: 48, color: AppColors.border),
+          Expanded(
+            child: InkWell(
+              onTap: () => onChanged('Fee Waiver'),
               borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: _consultationPaymentStatus ? AppColors.success.withOpacity(0.1) : null,
+                  color: isFeeWaiver ? Colors.purple.withOpacity(0.1) : null,
                   borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _consultationPaymentStatus ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: _consultationPaymentStatus ? AppColors.success : AppColors.textSecondary,
-                      size: 18,
+                      isFeeWaiver ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: isFeeWaiver ? Colors.purple : AppColors.textSecondary,
+                      size: 16,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
-                      'Paid',
+                      'Fee Waiver',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: _consultationPaymentStatus ? AppColors.success : AppColors.textSecondary,
+                        fontSize: 12,
+                        color: isFeeWaiver ? Colors.purple : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -221,6 +253,167 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         ],
       ),
     );
+  }
+
+  PatientModel? _findDuplicatePatient() {
+    if (_isEditMode) return null;
+    final allPatientsAsync = ref.read(allPatientsStreamProvider);
+    if (!allPatientsAsync.hasValue) return null;
+    final patientsList = allPatientsAsync.value ?? [];
+    final enteredName = _nameController.text.trim().toLowerCase();
+    final enteredPhone = _phoneController.text.trim();
+    final cleanEnteredPhone = enteredPhone.replaceAll(RegExp(r'\D'), '');
+
+    if (enteredName.isEmpty && cleanEnteredPhone.isEmpty) return null;
+
+    for (var p in patientsList) {
+      final existingName = p.fullName.trim().toLowerCase();
+      final cleanExistingPhone = p.phone.replaceAll(RegExp(r'\D'), '');
+
+      bool nameMatch = enteredName.isNotEmpty && existingName == enteredName;
+      bool phoneMatch = cleanEnteredPhone.isNotEmpty && cleanExistingPhone == cleanEnteredPhone;
+
+      if (nameMatch || phoneMatch) {
+        return p;
+      }
+    }
+    return null;
+  }
+
+  void _showDuplicateWarningDialog(PatientModel duplicate) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Possible Duplicate Found',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'An existing patient has similar information.',
+                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.6),
+                        children: [
+                          const TextSpan(text: 'Name: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: duplicate.fullName),
+                        ],
+                      ),
+                    ),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.6),
+                        children: [
+                          const TextSpan(text: 'Phone: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: duplicate.phone.isNotEmpty ? duplicate.phone : 'N/A'),
+                        ],
+                      ),
+                    ),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.6),
+                        children: [
+                          const TextSpan(text: 'Patient ID: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: duplicate.patientId),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Choose one option:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          actionsPadding: const EdgeInsets.all(16),
+          actions: [
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    context.go('/patients/${duplicate.patientId}');
+                  },
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: const Text('View Existing Profile'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    foregroundColor: AppColors.primary,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _saveForm();
+                  },
+                  icon: const Icon(Icons.person_add_outlined, size: 16),
+                  label: const Text('Register New Patient Anyway'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _onSavePressed() {
+    if (_formKey.currentState!.validate()) {
+      final duplicate = _findDuplicatePatient();
+      if (duplicate != null) {
+        _showDuplicateWarningDialog(duplicate);
+      } else {
+        _saveForm();
+      }
+    }
   }
 
   void _saveForm() async {
@@ -236,10 +429,14 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               : 'PT-${const Uuid().v4().substring(0, 5).toUpperCase()}';
 
       final consultationFeeText = _consultationFeeController.text.trim();
-      final double? consultationFee = consultationFeeText.isNotEmpty 
-          ? double.tryParse(consultationFeeText) 
-          : null;
+      final double consultationFee = consultationFeeText.isNotEmpty 
+          ? (double.tryParse(consultationFeeText) ?? 0.0) 
+          : 0.0;
       
+      final String? finalPaymentStatus = isMassageChair 
+          ? null 
+          : _consultationPaymentStatus;
+
       final patient = PatientModel(
         patientId: patientId,
         fullName: _nameController.text.trim(),
@@ -256,9 +453,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         assignedTherapistName: isMassageChair ? null : _selectedTherapistName,
         customerType: _customerType,
         consultationFee: isMassageChair ? null : consultationFee,
-        consultationPaymentStatus: isMassageChair ? null : (consultationFee != null ? _consultationPaymentStatus : null),
-        consultationPaymentDate: isMassageChair ? null : (consultationFee != null && _consultationPaymentStatus ? (_consultationPaymentDate ?? DateTime.now()) : null),
-        consultationNotes: isMassageChair ? null : (consultationFee != null && _consultationNotesController.text.trim().isNotEmpty ? _consultationNotesController.text.trim() : null),
+        consultationPaymentStatus: finalPaymentStatus,
+        consultationPaymentDate: isMassageChair ? null : (finalPaymentStatus == 'Paid' ? (_consultationPaymentDate ?? DateTime.now()) : null),
+        consultationNotes: isMassageChair ? null : (_consultationNotesController.text.trim().isNotEmpty ? _consultationNotesController.text.trim() : null),
+        paymentType: (isMassageChair ? _massagePaymentStatus == 'Fee Waiver' : _consultationPaymentStatus == 'Fee Waiver') ? 'feeWaiver' : 'regular',
+        isFeeWaiver: isMassageChair ? _massagePaymentStatus == 'Fee Waiver' : _consultationPaymentStatus == 'Fee Waiver',
       );
 
       final notifier = ref.read(patientOperationProvider.notifier);
@@ -758,6 +957,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                 controller: _consultationFeeController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 textInputAction: TextInputAction.next,
+                                readOnly: _consultationPaymentStatus == 'Fee Waiver',
                                 decoration: const InputDecoration(
                                   hintText: 'Enter fee (e.g. 1500)',
                                   prefixIcon: Icon(Icons.payments_outlined, size: 20),
@@ -779,12 +979,12 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                               final hasFee = _consultationFeeController.text.trim().isNotEmpty;
 
                               final dateField = InkWell(
-                                onTap: hasFee && _consultationPaymentStatus ? _pickConsultationPaymentDate : null,
+                                onTap: hasFee && _consultationPaymentStatus == 'Paid' ? _pickConsultationPaymentDate : null,
                                 child: InputDecorator(
                                   decoration: InputDecoration(
                                     prefixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
                                     hintText: 'Select date',
-                                    enabled: hasFee && _consultationPaymentStatus,
+                                    enabled: hasFee && _consultationPaymentStatus == 'Paid',
                                   ),
                                   child: Text(
                                     _consultationPaymentDate != null
@@ -792,7 +992,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                         : 'Select date',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w500,
-                                      color: hasFee && _consultationPaymentStatus ? AppColors.textPrimary : AppColors.textLight,
+                                      color: hasFee && _consultationPaymentStatus == 'Paid' ? AppColors.textPrimary : AppColors.textLight,
                                     ),
                                   ),
                                 ),
@@ -819,25 +1019,38 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                 );
                               }
 
+                              final toggleWidget = _buildPaymentStatusToggle(
+                                currentStatus: _consultationPaymentStatus,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _consultationPaymentStatus = val;
+                                    if (val == 'Fee Waiver') {
+                                      _consultationFeeController.text = '0';
+                                    }
+                                    if (val == 'Paid' && _consultationPaymentDate == null) {
+                                      _consultationPaymentDate = DateTime.now();
+                                    }
+                                  });
+                                },
+                              );
+
                               if (isNarrow) {
                                 return Column(
                                   children: [
                                     buildField('Consultation Fee (Optional)', feeField),
-                                    if (hasFee) ...[
-                                      const Text(
-                                        'Payment Status *',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                    const Text(
+                                      'Payment Status *',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
                                       ),
-                                      AppSizes.h8,
-                                      _buildPaymentStatusToggle(),
-                                      AppSizes.h20,
-                                      if (_consultationPaymentStatus)
-                                        buildField('Payment Date *', dateField),
-                                    ],
+                                    ),
+                                    AppSizes.h8,
+                                    toggleWidget,
+                                    AppSizes.h20,
+                                    if (_consultationPaymentStatus == 'Paid')
+                                      buildField('Payment Date *', dateField),
                                   ],
                                 );
                               }
@@ -850,27 +1063,25 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                       Expanded(child: buildField('Consultation Fee (Optional)', feeField)),
                                       AppSizes.w24,
                                       Expanded(
-                                        child: hasFee 
-                                            ? Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Payment Status *',
-                                                    style: TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: AppColors.textPrimary,
-                                                    ),
-                                                  ),
-                                                  AppSizes.h8,
-                                                  _buildPaymentStatusToggle(),
-                                                ],
-                                              )
-                                            : const SizedBox(),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Payment Status *',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                            ),
+                                            AppSizes.h8,
+                                            toggleWidget,
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  if (hasFee && _consultationPaymentStatus)
+                                  if (_consultationPaymentStatus == 'Paid')
                                     Row(
                                       children: [
                                         Expanded(child: buildField('Payment Date *', dateField)),
@@ -966,6 +1177,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                 controller: _feeController,
                                 keyboardType: TextInputType.number,
                                 textInputAction: TextInputAction.done,
+                                readOnly: _massagePaymentStatus == 'Fee Waiver',
                                 decoration: const InputDecoration(
                                   hintText: 'Enter fee amount',
                                   prefixIcon: Icon(Icons.payments_outlined, size: 20),
@@ -1040,78 +1252,16 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                             ),
                           ),
                           AppSizes.h8,
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                              border: Border.all(color: AppColors.border, width: 1.2),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () => setState(() => _massagePaymentStatus = false),
-                                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      decoration: BoxDecoration(
-                                        color: !_massagePaymentStatus ? AppColors.error.withOpacity(0.1) : null,
-                                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            !_massagePaymentStatus ? Icons.radio_button_checked : Icons.radio_button_off,
-                                            color: !_massagePaymentStatus ? AppColors.error : AppColors.textSecondary,
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Unpaid',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: !_massagePaymentStatus ? AppColors.error : AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Container(width: 1.2, height: 48, color: AppColors.border),
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () => setState(() => _massagePaymentStatus = true),
-                                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      decoration: BoxDecoration(
-                                        color: _massagePaymentStatus ? AppColors.success.withOpacity(0.1) : null,
-                                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            _massagePaymentStatus ? Icons.radio_button_checked : Icons.radio_button_off,
-                                            color: _massagePaymentStatus ? AppColors.success : AppColors.textSecondary,
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Paid',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: _massagePaymentStatus ? AppColors.success : AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          _buildPaymentStatusToggle(
+                            currentStatus: _massagePaymentStatus,
+                            onChanged: (val) {
+                              setState(() {
+                                _massagePaymentStatus = val;
+                                if (val == 'Fee Waiver') {
+                                  _feeController.text = '0';
+                                }
+                              });
+                            },
                           ),
                           AppSizes.h32,
                         ],
@@ -1134,7 +1284,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                     const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
                                     const SizedBox(width: 8),
                                     const Text(
-                                      'Duplicate Patient Detected',
+                                      'Possible Duplicate Found',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
@@ -1145,10 +1295,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'A patient with this name or phone number is already registered:\n'
+                                  'An existing patient has similar information:\n'
                                   '• Name: ${duplicatePatient.fullName}\n'
                                   '• Phone: ${duplicatePatient.phone}\n'
-                                  '• ID: ${duplicatePatient.patientId}',
+                                  '• ID: ${duplicatePatient.patientId}\n\n'
+                                  'Note: You can still register a new patient if this is a different person.',
                                   style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.textPrimary),
                                 ),
                                 const SizedBox(height: 12),
@@ -1159,7 +1310,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                         context.go('/patients/${duplicatePatient!.patientId}');
                                       },
                                       icon: const Icon(Icons.visibility_rounded, size: 16),
-                                      label: const Text('Go to Existing Profile'),
+                                      label: const Text('View Existing Profile'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.warning,
                                         foregroundColor: Colors.white,
@@ -1183,7 +1334,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                             ),
                             AppSizes.w16,
                             ElevatedButton(
-                              onPressed: (operationState.isLoading || duplicatePatient != null) ? null : _saveForm,
+                              onPressed: operationState.isLoading ? null : _onSavePressed,
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.p32, vertical: 18),
                               ),

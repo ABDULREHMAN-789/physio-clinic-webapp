@@ -286,21 +286,40 @@ class ReportsScreen extends ConsumerWidget {
   ) {
     final textTheme = Theme.of(context).textTheme;
     final totalBilling = sessions.fold(0.0, (sum, s) => sum + s.charges);
-    final outstanding = sessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
-    final collected = totalBilling - outstanding;
+    final outstanding = sessions.where((s) => s.paymentStatus == 'Unpaid').fold(0.0, (sum, s) => sum + s.charges);
+    final collected = sessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
 
     // Massage chair totals
     final mcTotal = massageChairBills.fold(0.0, (sum, b) => sum + b.fee);
-    final mcOutstanding = massageChairBills.where((b) => !b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee);
-    final mcCollected = mcTotal - mcOutstanding;
+    final mcOutstanding = massageChairBills.where((b) => b.paymentStatus == 'Unpaid').fold(0.0, (sum, b) => sum + b.fee);
+    final mcCollected = massageChairBills.where((b) => b.paymentStatus == 'Paid').fold(0.0, (sum, b) => sum + b.fee);
 
     // Consultation totals (based on filteredPatients)
-    final consultationFeePatients = filteredPatients.where((p) => p.consultationFee != null && p.consultationFee! > 0);
-    final double consultationTotal = consultationFeePatients.fold(0.0, (sum, p) => sum + p.consultationFee!);
+    final consultationFeePatients = filteredPatients.where((p) => p.consultationPaymentStatus != null || (p.consultationFee != null && p.consultationFee! >= 0));
     final double consultationCollected = consultationFeePatients
-        .where((p) => p.consultationPaymentStatus == true)
-        .fold(0.0, (sum, p) => sum + p.consultationFee!);
-    final double consultationOutstanding = consultationTotal - consultationCollected;
+        .where((p) => p.consultationPaymentStatus == 'Paid')
+        .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final double consultationOutstanding = consultationFeePatients
+        .where((p) => (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid')
+        .fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final double consultationTotal = consultationCollected + consultationOutstanding;
+
+    // Fee Waiver & Free Patient Statistics
+    final int totalPaidPatientsCount = filteredPatients.where((p) =>
+      p.consultationPaymentStatus == 'Paid' || sessions.any((s) => s.patientId == p.patientId && s.paymentStatus == 'Paid')
+    ).length;
+
+    final int totalUnpaidPatientsCount = filteredPatients.where((p) =>
+      p.consultationPaymentStatus == 'Unpaid' || sessions.any((s) => s.patientId == p.patientId && s.paymentStatus == 'Unpaid')
+    ).length;
+
+    final int totalFeeWaiverPatientsCount = filteredPatients.where((p) =>
+      p.consultationPaymentStatus == 'Fee Waiver' || sessions.any((s) => s.patientId == p.patientId && s.paymentStatus == 'Fee Waiver')
+    ).length;
+
+    final int totalFreeConsultationsCount = filteredPatients.where((p) => p.consultationPaymentStatus == 'Fee Waiver').length;
+    final int totalFreeTherapySessionsCount = sessions.where((s) => s.paymentStatus == 'Fee Waiver').length;
+    final int totalFreeMassageChairVisitsCount = massageChairBills.where((b) => b.paymentStatus == 'Fee Waiver').length;
 
     // Build unified transactions breakdown rows
     final List<_ReportRowData> reportRows = [];
@@ -326,18 +345,18 @@ class ReportsScreen extends ConsumerWidget {
         customerName: p.fullName,
         serviceType: 'Therapy',
         amount: s.charges,
-        isPaid: s.paymentStatus,
+        paymentStatus: s.paymentStatus,
       ));
     }
 
-    // Add massage chair
+    // Add massage chair sessions
     for (final b in massageChairBills) {
       reportRows.add(_ReportRowData(
         date: b.sessionDate,
         customerName: b.customerName,
         serviceType: 'Massage Chair',
         amount: b.fee,
-        isPaid: b.paymentStatus,
+        paymentStatus: b.paymentStatus,
       ));
     }
 
@@ -347,8 +366,8 @@ class ReportsScreen extends ConsumerWidget {
         date: p.registrationDate,
         customerName: p.fullName,
         serviceType: 'Consultation',
-        amount: p.consultationFee!,
-        isPaid: p.consultationPaymentStatus ?? false,
+        amount: p.consultationFee ?? 0.0,
+        paymentStatus: p.consultationPaymentStatus ?? 'Unpaid',
       ));
     }
 
@@ -389,9 +408,13 @@ class ReportsScreen extends ConsumerWidget {
           DataCell(Text('Rs. ${NumberFormat('#,##0').format(row.amount)}')),
           DataCell(
             Text(
-              row.isPaid ? 'Paid' : 'Unpaid',
+              row.paymentStatus,
               style: TextStyle(
-                color: row.isPaid ? AppColors.success : AppColors.error,
+                color: row.paymentStatus == 'Paid'
+                    ? AppColors.success
+                    : row.paymentStatus == 'Fee Waiver'
+                        ? Colors.purple
+                        : AppColors.error,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -441,6 +464,31 @@ class ReportsScreen extends ConsumerWidget {
                     Expanded(child: _buildReportCard('Consultation Collected', 'Rs. ${NumberFormat('#,##0').format(consultationCollected)}', AppColors.success)),
                     AppSizes.w16,
                     Expanded(child: _buildReportCard('Consultation Outstanding', 'Rs. ${NumberFormat('#,##0').format(consultationOutstanding)}', AppColors.warning)),
+                  ],
+                ),
+                AppSizes.h24,
+                Text(
+                  'Fee Waiver & Free Services Statistics',
+                  style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+                AppSizes.h12,
+                Row(
+                  children: [
+                    Expanded(child: _buildReportCard('Total Paid Patients', '$totalPaidPatientsCount', AppColors.success)),
+                    AppSizes.w16,
+                    Expanded(child: _buildReportCard('Total Unpaid Patients', '$totalUnpaidPatientsCount', AppColors.error)),
+                    AppSizes.w16,
+                    Expanded(child: _buildReportCard('Total Fee Waiver Patients', '$totalFeeWaiverPatientsCount', Colors.purple)),
+                  ],
+                ),
+                AppSizes.h12,
+                Row(
+                  children: [
+                    Expanded(child: _buildReportCard('Total Free Consultations', '$totalFreeConsultationsCount', Colors.purple)),
+                    AppSizes.w16,
+                    Expanded(child: _buildReportCard('Total Free Therapy Sessions', '$totalFreeTherapySessionsCount', Colors.purple)),
+                    AppSizes.w16,
+                    Expanded(child: _buildReportCard('Total Free Massage Visits', '$totalFreeMassageChairVisitsCount', Colors.purple)),
                   ],
                 ),
               ] else ...[
@@ -499,7 +547,7 @@ class ReportsScreen extends ConsumerWidget {
 
     // Aggregate unpaid sessions by patient
     final Map<String, double> patientDues = {};
-    for (var session in sessions.where((s) => !s.paymentStatus)) {
+    for (var session in sessions.where((s) => s.paymentStatus == 'Unpaid')) {
       patientDues[session.patientId] = (patientDues[session.patientId] ?? 0.0) + session.charges;
     }
 
@@ -508,7 +556,7 @@ class ReportsScreen extends ConsumerWidget {
     // Massage chair dues (admin only)
     final Map<String, double> mcDues = {};
     if (isAdmin) {
-      for (var bill in massageChairBills.where((b) => !b.paymentStatus)) {
+      for (var bill in massageChairBills.where((b) => b.paymentStatus == 'Unpaid')) {
         mcDues[bill.customerId] = (mcDues[bill.customerId] ?? 0.0) + bill.fee;
       }
     }
@@ -517,8 +565,8 @@ class ReportsScreen extends ConsumerWidget {
     // Consultation dues (admin only)
     final Map<String, double> consultationDues = {};
     if (isAdmin) {
-      for (var p in patients.where((p) => p.consultationFee != null && p.consultationFee! > 0 && !(p.consultationPaymentStatus ?? false))) {
-        consultationDues[p.patientId] = (consultationDues[p.patientId] ?? 0.0) + p.consultationFee!;
+      for (var p in patients.where((p) => p.consultationFee != null && (p.consultationFee ?? 0.0) > 0 && (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid')) {
+        consultationDues[p.patientId] = (consultationDues[p.patientId] ?? 0.0) + (p.consultationFee ?? 0.0);
       }
     }
     final totalConsultationDues = consultationDues.values.fold(0.0, (sum, val) => sum + val);
@@ -906,7 +954,7 @@ class ReportsScreen extends ConsumerWidget {
     final List<_StaffSalaryRowData> rowsData = [];
     for (final therapist in therapists) {
       final therapistSessions = sessions.where((s) => s.therapistId == therapist.userId).toList();
-      final double revenue = therapistSessions.fold(0.0, (sum, s) => sum + s.charges);
+      final double revenue = therapistSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
       final int count = therapistSessions.length;
       final double salary = revenue * (therapist.revenuePercentage / 100);
 
@@ -1101,17 +1149,17 @@ Future<Uint8List> _generatePdfReport(
 
   if (reportType == ReportType.revenue) {
     final totalBilling = filteredSessions.fold(0.0, (sum, s) => sum + s.charges);
-    final outstanding = filteredSessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
-    final collected = totalBilling - outstanding;
+    final outstanding = filteredSessions.where((s) => s.paymentStatus == 'Unpaid').fold(0.0, (sum, s) => sum + s.charges);
+    final collected = filteredSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
 
     final mcTotal = filteredMcBills.fold(0.0, (sum, b) => sum + b.fee);
-    final mcOutstanding = filteredMcBills.where((b) => !b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee);
-    final mcCollected = mcTotal - mcOutstanding;
+    final mcOutstanding = filteredMcBills.where((b) => b.paymentStatus == 'Unpaid').fold(0.0, (sum, b) => sum + b.fee);
+    final mcCollected = filteredMcBills.where((b) => b.paymentStatus == 'Paid').fold(0.0, (sum, b) => sum + b.fee);
 
-    final consultationFeePatients = filteredPatients.where((p) => p.consultationFee != null && p.consultationFee! > 0);
-    final consultationTotal = consultationFeePatients.fold(0.0, (sum, p) => sum + p.consultationFee!);
-    final consultationCollected = consultationFeePatients.where((p) => p.consultationPaymentStatus == true).fold(0.0, (sum, p) => sum + p.consultationFee!);
-    final consultationOutstanding = consultationTotal - consultationCollected;
+    final consultationFeePatients = filteredPatients.where((p) => p.consultationPaymentStatus != null || (p.consultationFee != null && p.consultationFee! >= 0));
+    final consultationCollected = consultationFeePatients.where((p) => p.consultationPaymentStatus == 'Paid').fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final consultationOutstanding = consultationFeePatients.where((p) => (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid').fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final consultationTotal = consultationCollected + consultationOutstanding;
 
     content.add(
       pw.Column(
@@ -1171,13 +1219,13 @@ Future<Uint8List> _generatePdfReport(
     final List<_ReportRowData> reportRows = [];
     for (final s in filteredSessions) {
       final p = patients.firstWhere((p) => p.patientId == s.patientId, orElse: () => PatientModel(patientId: '', fullName: 'Unknown', phone: 'N/A', age: 0, gender: '', address: '', medicalCondition: '', notes: '', registrationDate: DateTime.now()));
-      reportRows.add(_ReportRowData(date: s.sessionDate, customerName: p.fullName, serviceType: 'Therapy', amount: s.charges, isPaid: s.paymentStatus));
+      reportRows.add(_ReportRowData(date: s.sessionDate, customerName: p.fullName, serviceType: 'Therapy', amount: s.charges, paymentStatus: s.paymentStatus));
     }
     for (final b in filteredMcBills) {
-      reportRows.add(_ReportRowData(date: b.sessionDate, customerName: b.customerName, serviceType: 'Massage Chair', amount: b.fee, isPaid: b.paymentStatus));
+      reportRows.add(_ReportRowData(date: b.sessionDate, customerName: b.customerName, serviceType: 'Massage Chair', amount: b.fee, paymentStatus: b.paymentStatus));
     }
     for (final p in consultationFeePatients) {
-      reportRows.add(_ReportRowData(date: p.registrationDate, customerName: p.fullName, serviceType: 'Consultation', amount: p.consultationFee!, isPaid: p.consultationPaymentStatus ?? false));
+      reportRows.add(_ReportRowData(date: p.registrationDate, customerName: p.fullName, serviceType: 'Consultation', amount: p.consultationFee ?? 0.0, paymentStatus: p.consultationPaymentStatus ?? 'Unpaid'));
     }
     reportRows.sort((a, b) => b.date.compareTo(a.date));
 
@@ -1188,7 +1236,7 @@ Future<Uint8List> _generatePdfReport(
         row.customerName,
         row.serviceType,
         'Rs. ${NumberFormat('#,##0').format(row.amount)}',
-        row.isPaid ? 'Paid' : 'Unpaid',
+        row.paymentStatus,
       ])
     ];
 
@@ -1203,14 +1251,14 @@ Future<Uint8List> _generatePdfReport(
     );
   } else if (reportType == ReportType.pendingDues) {
     final Map<String, double> patientDues = {};
-    for (var session in sessions.where((s) => !s.paymentStatus)) {
+    for (var session in sessions.where((s) => s.paymentStatus == 'Unpaid')) {
       patientDues[session.patientId] = (patientDues[session.patientId] ?? 0.0) + session.charges;
     }
     final totalDues = patientDues.values.fold(0.0, (sum, val) => sum + val);
 
     final Map<String, double> mcDues = {};
     if (isAdmin) {
-      for (var bill in massageChairBills.where((b) => !b.paymentStatus)) {
+      for (var bill in massageChairBills.where((b) => b.paymentStatus == 'Unpaid')) {
         mcDues[bill.customerId] = (mcDues[bill.customerId] ?? 0.0) + bill.fee;
       }
     }
@@ -1218,8 +1266,8 @@ Future<Uint8List> _generatePdfReport(
 
     final Map<String, double> consultationDues = {};
     if (isAdmin) {
-      for (var p in patients.where((p) => p.consultationFee != null && p.consultationFee! > 0 && !(p.consultationPaymentStatus ?? false))) {
-        consultationDues[p.patientId] = (consultationDues[p.patientId] ?? 0.0) + p.consultationFee!;
+      for (var p in patients.where((p) => p.consultationFee != null && (p.consultationFee ?? 0.0) > 0 && (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid')) {
+        consultationDues[p.patientId] = (consultationDues[p.patientId] ?? 0.0) + (p.consultationFee ?? 0.0);
       }
     }
     final totalConsultationDues = consultationDues.values.fold(0.0, (sum, val) => sum + val);
@@ -1511,17 +1559,17 @@ Future<Uint8List> _generateDocxReport(
 
   if (reportType == ReportType.revenue) {
     final totalBilling = filteredSessions.fold(0.0, (sum, s) => sum + s.charges);
-    final outstanding = filteredSessions.where((s) => !s.paymentStatus).fold(0.0, (sum, s) => sum + s.charges);
-    final collected = totalBilling - outstanding;
+    final outstanding = filteredSessions.where((s) => s.paymentStatus == 'Unpaid').fold(0.0, (sum, s) => sum + s.charges);
+    final collected = filteredSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
 
     final mcTotal = filteredMcBills.fold(0.0, (sum, b) => sum + b.fee);
-    final mcOutstanding = filteredMcBills.where((b) => !b.paymentStatus).fold(0.0, (sum, b) => sum + b.fee);
-    final mcCollected = mcTotal - mcOutstanding;
+    final mcOutstanding = filteredMcBills.where((b) => b.paymentStatus == 'Unpaid').fold(0.0, (sum, b) => sum + b.fee);
+    final mcCollected = filteredMcBills.where((b) => b.paymentStatus == 'Paid').fold(0.0, (sum, b) => sum + b.fee);
 
-    final consultationFeePatients = filteredPatients.where((p) => p.consultationFee != null && p.consultationFee! > 0);
-    final consultationTotal = consultationFeePatients.fold(0.0, (sum, p) => sum + p.consultationFee!);
-    final consultationCollected = consultationFeePatients.where((p) => p.consultationPaymentStatus == true).fold(0.0, (sum, p) => sum + p.consultationFee!);
-    final consultationOutstanding = consultationTotal - consultationCollected;
+    final consultationFeePatients = filteredPatients.where((p) => p.consultationPaymentStatus != null || (p.consultationFee != null && p.consultationFee! >= 0));
+    final consultationCollected = consultationFeePatients.where((p) => p.consultationPaymentStatus == 'Paid').fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final consultationOutstanding = consultationFeePatients.where((p) => (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid').fold(0.0, (sum, p) => sum + (p.consultationFee ?? 0.0));
+    final consultationTotal = consultationCollected + consultationOutstanding;
 
     builder.h3('Billing Summaries')
            .p('Therapy Sessions Billings: Rs. ${NumberFormat('#,##0').format(totalBilling)} (Collected: Rs. ${NumberFormat('#,##0').format(collected)}, Outstanding: Rs. ${NumberFormat('#,##0').format(outstanding)})');
@@ -1534,13 +1582,13 @@ Future<Uint8List> _generateDocxReport(
     final List<_ReportRowData> reportRows = [];
     for (final s in filteredSessions) {
       final p = patients.firstWhere((p) => p.patientId == s.patientId, orElse: () => PatientModel(patientId: '', fullName: 'Unknown', phone: 'N/A', age: 0, gender: '', address: '', medicalCondition: '', notes: '', registrationDate: DateTime.now()));
-      reportRows.add(_ReportRowData(date: s.sessionDate, customerName: p.fullName, serviceType: 'Therapy', amount: s.charges, isPaid: s.paymentStatus));
+      reportRows.add(_ReportRowData(date: s.sessionDate, customerName: p.fullName, serviceType: 'Therapy', amount: s.charges, paymentStatus: s.paymentStatus));
     }
     for (final b in filteredMcBills) {
-      reportRows.add(_ReportRowData(date: b.sessionDate, customerName: b.customerName, serviceType: 'Massage Chair', amount: b.fee, isPaid: b.paymentStatus));
+      reportRows.add(_ReportRowData(date: b.sessionDate, customerName: b.customerName, serviceType: 'Massage Chair', amount: b.fee, paymentStatus: b.paymentStatus));
     }
     for (final p in consultationFeePatients) {
-      reportRows.add(_ReportRowData(date: p.registrationDate, customerName: p.fullName, serviceType: 'Consultation', amount: p.consultationFee!, isPaid: p.consultationPaymentStatus ?? false));
+      reportRows.add(_ReportRowData(date: p.registrationDate, customerName: p.fullName, serviceType: 'Consultation', amount: p.consultationFee ?? 0.0, paymentStatus: p.consultationPaymentStatus ?? 'Unpaid'));
     }
     reportRows.sort((a, b) => b.date.compareTo(a.date));
 
@@ -1553,20 +1601,20 @@ Future<Uint8List> _generateDocxReport(
         row.customerName,
         row.serviceType,
         'Rs. ${NumberFormat('#,##0').format(row.amount)}',
-        row.isPaid ? 'Paid' : 'Unpaid'
+        row.paymentStatus
       ]);
     }
     builder.table(data);
   } else if (reportType == ReportType.pendingDues) {
     final Map<String, double> patientDues = {};
-    for (var session in sessions.where((s) => !s.paymentStatus)) {
+    for (var session in sessions.where((s) => s.paymentStatus == 'Unpaid')) {
       patientDues[session.patientId] = (patientDues[session.patientId] ?? 0.0) + session.charges;
     }
     final totalDues = patientDues.values.fold(0.0, (sum, val) => sum + val);
 
     final Map<String, double> mcDues = {};
     if (isAdmin) {
-      for (var bill in massageChairBills.where((b) => !b.paymentStatus)) {
+      for (var bill in massageChairBills.where((b) => b.paymentStatus == 'Unpaid')) {
         mcDues[bill.customerId] = (mcDues[bill.customerId] ?? 0.0) + bill.fee;
       }
     }
@@ -1574,8 +1622,8 @@ Future<Uint8List> _generateDocxReport(
 
     final Map<String, double> consultationDues = {};
     if (isAdmin) {
-      for (var p in patients.where((p) => p.consultationFee != null && p.consultationFee! > 0 && !(p.consultationPaymentStatus ?? false))) {
-        consultationDues[p.patientId] = (consultationDues[p.patientId] ?? 0.0) + p.consultationFee!;
+      for (var p in patients.where((p) => p.consultationFee != null && (p.consultationFee ?? 0.0) > 0 && (p.consultationPaymentStatus ?? 'Unpaid') == 'Unpaid')) {
+        consultationDues[p.patientId] = (consultationDues[p.patientId] ?? 0.0) + (p.consultationFee ?? 0.0);
       }
     }
     final totalConsultationDues = consultationDues.values.fold(0.0, (sum, val) => sum + val);
@@ -1956,13 +2004,13 @@ class _ReportRowData {
   final String customerName;
   final String serviceType;
   final double amount;
-  final bool isPaid;
+  final String paymentStatus;
   _ReportRowData({
     required this.date,
     required this.customerName,
     required this.serviceType,
     required this.amount,
-    required this.isPaid,
+    required this.paymentStatus,
   });
 }
 

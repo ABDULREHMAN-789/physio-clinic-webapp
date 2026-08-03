@@ -170,7 +170,7 @@ class SessionsScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                         ),
                         child: DropdownButtonHideUnderline(
-                          child: DropdownButton<bool?>(
+                          child: DropdownButton<String?>(
                             value: selectedPaymentStatus,
                             isExpanded: true,
                             hint: const Text('Filter by Payment'),
@@ -179,8 +179,9 @@ class SessionsScreen extends ConsumerWidget {
                             },
                             items: const [
                               DropdownMenuItem(value: null, child: Text('All Payment Statuses')),
-                              DropdownMenuItem(value: true, child: Text('Paid Sessions Only')),
-                              DropdownMenuItem(value: false, child: Text('Unpaid Sessions Only')),
+                              DropdownMenuItem(value: 'Paid', child: Text('Paid Sessions Only')),
+                              DropdownMenuItem(value: 'Unpaid', child: Text('Unpaid Sessions Only')),
+                              DropdownMenuItem(value: 'Fee Waiver', child: Text('Fee Waiver Only')),
                             ],
                           ),
                         ),
@@ -361,13 +362,22 @@ class SessionsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: (session.paymentStatus ? AppColors.success : AppColors.error).withOpacity(0.1),
+                        color: (session.paymentStatus == 'Paid'
+                                ? AppColors.success
+                                : session.paymentStatus == 'Fee Waiver'
+                                    ? Colors.purple
+                                    : AppColors.error)
+                            .withOpacity(0.1),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(
-                        session.paymentStatus ? 'Paid' : 'Unpaid',
+                        session.paymentStatus,
                         style: TextStyle(
-                          color: session.paymentStatus ? AppColors.success : AppColors.error,
+                          color: session.paymentStatus == 'Paid'
+                              ? AppColors.success
+                              : session.paymentStatus == 'Fee Waiver'
+                                  ? Colors.purple
+                                  : AppColors.error,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
@@ -456,13 +466,22 @@ class SessionsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: (session.paymentStatus ? AppColors.success : AppColors.error).withOpacity(0.1),
+                        color: (session.paymentStatus == 'Paid'
+                                ? AppColors.success
+                                : session.paymentStatus == 'Fee Waiver'
+                                    ? Colors.purple
+                                    : AppColors.error)
+                            .withOpacity(0.1),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(
-                        session.paymentStatus ? 'Paid' : 'Unpaid',
+                        session.paymentStatus,
                         style: TextStyle(
-                          color: session.paymentStatus ? AppColors.success : AppColors.error,
+                          color: session.paymentStatus == 'Paid'
+                              ? AppColors.success
+                              : session.paymentStatus == 'Fee Waiver'
+                                  ? Colors.purple
+                                  : AppColors.error,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
