@@ -365,7 +365,7 @@ class DashboardScreen extends ConsumerWidget {
         boxShadow: gradient != null
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 )
@@ -377,7 +377,7 @@ class DashboardScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(AppSizes.p12),
             decoration: BoxDecoration(
-              color: gradient == null ? color.withOpacity(0.1) : Colors.white.withOpacity(0.2),
+              color: gradient == null ? color.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -395,7 +395,7 @@ class DashboardScreen extends ConsumerWidget {
                 Text(
                   title.toUpperCase(),
                   style: TextStyle(
-                    color: gradient == null ? AppColors.textSecondary : Colors.white.withOpacity(0.8),
+                    color: gradient == null ? AppColors.textSecondary : Colors.white.withValues(alpha: 0.8),
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
                     letterSpacing: 0.5,
@@ -415,7 +415,7 @@ class DashboardScreen extends ConsumerWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: gradient == null ? AppColors.textLight : Colors.white.withOpacity(0.7),
+                    color: gradient == null ? AppColors.textLight : Colors.white.withValues(alpha: 0.7),
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
@@ -591,8 +591,8 @@ class DashboardScreen extends ConsumerWidget {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary.withOpacity(0.25),
-                            AppColors.primary.withOpacity(0.0),
+                            AppColors.primary.withValues(alpha: 0.25),
+                            AppColors.primary.withValues(alpha: 0.0),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -611,8 +611,8 @@ class DashboardScreen extends ConsumerWidget {
                           show: true,
                           gradient: LinearGradient(
                             colors: [
-                              const Color(0xFFE65100).withOpacity(0.25),
-                              const Color(0xFFE65100).withOpacity(0.0),
+                              const Color(0xFFE65100).withValues(alpha: 0.25),
+                              const Color(0xFFE65100).withValues(alpha: 0.0),
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -630,8 +630,8 @@ class DashboardScreen extends ConsumerWidget {
                           show: true,
                           gradient: LinearGradient(
                             colors: [
-                              const Color(0xFF8E24AA).withOpacity(0.25),
-                              const Color(0xFF8E24AA).withOpacity(0.0),
+                              const Color(0xFF8E24AA).withValues(alpha: 0.25),
+                              const Color(0xFF8E24AA).withValues(alpha: 0.0),
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -867,7 +867,7 @@ class DashboardScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSizes.p8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.payments_rounded, color: AppColors.primary, size: 24),
@@ -961,10 +961,10 @@ class DashboardScreen extends ConsumerWidget {
       width: 220,
       padding: const EdgeInsets.all(AppSizes.p16),
       decoration: BoxDecoration(
-        color: isHighlighted ? AppColors.success.withOpacity(0.05) : AppColors.background,
+        color: isHighlighted ? AppColors.success.withValues(alpha: 0.05) : AppColors.background,
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
         border: Border.all(
-          color: isHighlighted ? AppColors.success.withOpacity(0.2) : AppColors.border,
+          color: isHighlighted ? AppColors.success.withValues(alpha: 0.2) : AppColors.border,
           width: 1.5,
         ),
       ),
@@ -1025,7 +1025,7 @@ class DashboardScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSizes.p8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.people_alt_rounded, color: AppColors.primary, size: 24),
@@ -1068,7 +1068,7 @@ class DashboardScreen extends ConsumerWidget {
                             minWidth: constraints.maxWidth,
                           ),
                           child: DataTable(
-                            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+                            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
                             columns: const [
                               DataColumn(label: Text('Staff Member', style: TextStyle(fontWeight: FontWeight.bold))),
                               DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),

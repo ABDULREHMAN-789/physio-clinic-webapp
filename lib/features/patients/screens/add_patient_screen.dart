@@ -161,7 +161,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: isUnpaid ? AppColors.error.withOpacity(0.1) : null,
+                  color: isUnpaid ? AppColors.error.withValues(alpha: 0.1) : null,
                   borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                 ),
                 child: Row(
@@ -193,7 +193,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: isPaid ? AppColors.success.withOpacity(0.1) : null,
+                  color: isPaid ? AppColors.success.withValues(alpha: 0.1) : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -225,7 +225,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: isFeeWaiver ? Colors.purple.withOpacity(0.1) : null,
+                  color: isFeeWaiver ? Colors.purple.withValues(alpha: 0.1) : null,
                   borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                 ),
                 child: Row(
@@ -1388,7 +1388,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isSelected 
-                    ? (value == 'massage_chair' ? const Color(0xFFE65100) : AppColors.primary).withOpacity(0.15)
+                    ? (value == 'massage_chair' ? const Color(0xFFE65100) : AppColors.primary).withValues(alpha: 0.15)
                     : AppColors.background,
                 shape: BoxShape.circle,
               ),

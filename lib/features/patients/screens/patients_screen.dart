@@ -241,7 +241,7 @@ class PatientsScreen extends ConsumerWidget {
         child: SizedBox(
           width: double.infinity,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
             dataRowMaxHeight: 70,
             columnSpacing: AppSizes.p20,
             columns: const [

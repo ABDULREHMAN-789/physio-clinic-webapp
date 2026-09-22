@@ -381,7 +381,7 @@ class ReportsScreen extends ConsumerWidget {
         color = const Color(0xFFFFF3E0);
         textBadgeColor = const Color(0xFFE65100);
       } else if (row.serviceType == 'Consultation') {
-        color = Colors.purple.withOpacity(0.1);
+        color = Colors.purple.withValues(alpha: 0.1);
         textBadgeColor = Colors.purple;
       } else {
         color = AppColors.primaryLight;
@@ -631,7 +631,7 @@ class ReportsScreen extends ConsumerWidget {
         color = const Color(0xFFFFF3E0);
         textBadgeColor = const Color(0xFFE65100);
       } else if (row.serviceType == 'Consultation') {
-        color = Colors.purple.withOpacity(0.1);
+        color = Colors.purple.withValues(alpha: 0.1);
         textBadgeColor = Colors.purple;
       } else {
         color = AppColors.primaryLight;
@@ -890,9 +890,9 @@ class ReportsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.p20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        border: Border.all(color: color.withOpacity(0.12), width: 1.5),
+        border: Border.all(color: color.withValues(alpha: 0.12), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1010,7 +1010,7 @@ class ReportsScreen extends ConsumerWidget {
                                   minWidth: constraints.maxWidth,
                                 ),
                                 child: DataTable(
-                                  headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+                                  headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
                                   columns: const [
                                     DataColumn(label: Text('Therapist')),
                                     DataColumn(label: Text('Revenue Percentage')),
@@ -1969,7 +1969,7 @@ class PrintPreviewDialog extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(AppSizes.p12),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryLight.withOpacity(0.3),
+                            color: AppColors.primaryLight.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                           ),
                           child: Row(

@@ -428,7 +428,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(vertical: 14),
                                               decoration: BoxDecoration(
-                                                color: _paymentStatus == 'Unpaid' ? AppColors.error.withOpacity(0.1) : null,
+                                                color: _paymentStatus == 'Unpaid' ? AppColors.error.withValues(alpha: 0.1) : null,
                                                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                                               ),
                                               child: Row(
@@ -460,7 +460,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(vertical: 14),
                                               decoration: BoxDecoration(
-                                                color: _paymentStatus == 'Paid' ? AppColors.success.withOpacity(0.1) : null,
+                                                color: _paymentStatus == 'Paid' ? AppColors.success.withValues(alpha: 0.1) : null,
                                               ),
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -495,7 +495,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(vertical: 14),
                                               decoration: BoxDecoration(
-                                                color: _paymentStatus == 'Fee Waiver' ? Colors.purple.withOpacity(0.1) : null,
+                                                color: _paymentStatus == 'Fee Waiver' ? Colors.purple.withValues(alpha: 0.1) : null,
                                                 borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                                               ),
                                               child: Row(

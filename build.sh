@@ -5,6 +5,9 @@ echo "==============================================="
 echo "  Flutter Web Build Script for Vercel Deploy   "
 echo "==============================================="
 
+# Avoid Git dubious ownership error on Vercel CI
+git config --global --add safe.directory "*" || true
+
 # Step 1: Install / Locate Flutter SDK
 if command -v flutter &> /dev/null; then
   echo ">>> Flutter is already available in PATH."
@@ -17,9 +20,10 @@ else
   export PATH="$PATH:$(pwd)/flutter/bin"
 fi
 
-# Step 2: Show version info
+# Step 2: Show version info & disable analytics
 echo ">>> Flutter Version:"
 flutter --version
+flutter config --no-analytics || true
 
 # Step 3: Enable web support
 echo ">>> Enabling Flutter Web..."

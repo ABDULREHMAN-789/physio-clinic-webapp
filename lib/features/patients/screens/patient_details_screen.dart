@@ -354,7 +354,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.purple.withOpacity(0.1),
+                      color: Colors.purple.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                     ),
                     child: const Icon(Icons.payment_rounded, color: Colors.purple, size: 20),
@@ -396,7 +396,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                               : consultationStatus == 'Fee Waiver'
                                   ? Colors.purple
                                   : AppColors.error)
-                          .withOpacity(0.1),
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -618,7 +618,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                   const Text('Select a new therapist to assign to this patient.'),
                   AppSizes.h16,
                   DropdownButtonFormField<String>(
-                    value: selectedTherapistId,
+                    initialValue: selectedTherapistId,
                     hint: const Text('Select Therapist'),
                     items: staffList.map((staff) {
                       return DropdownMenuItem(
@@ -688,9 +688,9 @@ class PatientDetailsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.p16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,7 +763,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: indicatorColor.withOpacity(0.3),
+                      color: indicatorColor.withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )
@@ -818,7 +818,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                                         : session.paymentStatus == 'Fee Waiver'
                                             ? Colors.purple
                                             : AppColors.error)
-                                    .withOpacity(0.1),
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                               ),
                               child: Text(
@@ -940,7 +940,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: indicatorColor.withOpacity(0.3),
+                      color: indicatorColor.withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )
@@ -984,7 +984,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                                         : bill.paymentStatus == 'Fee Waiver'
                                             ? Colors.purple
                                             : AppColors.error)
-                                    .withOpacity(0.1),
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                               ),
                               child: Text(
@@ -1080,7 +1080,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: indicatorColor.withOpacity(0.3),
+                      color: indicatorColor.withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )
@@ -1116,7 +1116,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.purple.withOpacity(0.1),
+                                  color: Colors.purple.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: const Text(
@@ -1139,7 +1139,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                                         : consultationStatus == 'Fee Waiver'
                                             ? Colors.purple
                                             : AppColors.error)
-                                    .withOpacity(0.1),
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                               ),
                               child: Text(
@@ -1338,7 +1338,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: paymentStatus == 'Unpaid' ? AppColors.error.withOpacity(0.1) : null,
+                                        color: paymentStatus == 'Unpaid' ? AppColors.error.withValues(alpha: 0.1) : null,
                                         borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                                       ),
                                       child: Row(
@@ -1363,7 +1363,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: paymentStatus == 'Paid' ? AppColors.success.withOpacity(0.1) : null,
+                                        color: paymentStatus == 'Paid' ? AppColors.success.withValues(alpha: 0.1) : null,
                                       ),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1391,7 +1391,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: paymentStatus == 'Fee Waiver' ? Colors.purple.withOpacity(0.1) : null,
+                                        color: paymentStatus == 'Fee Waiver' ? Colors.purple.withValues(alpha: 0.1) : null,
                                         borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                                       ),
                                       child: Row(

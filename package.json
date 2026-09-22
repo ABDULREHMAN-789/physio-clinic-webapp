@@ -4,6 +4,7 @@
   "description": "Firebase Firestore setup script for Physio Therapy Clinic",
   "main": "firebase_setup.js",
   "scripts": {
+    "build": "bash build.sh",
     "setup": "node firebase_setup.js",
     "init": "npm install && node firebase_setup.js"
   },

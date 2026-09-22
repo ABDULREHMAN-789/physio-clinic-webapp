@@ -216,7 +216,7 @@ class _AddEditStaffScreenState extends ConsumerState<AddEditStaffScreen> {
                         ),
                         AppSizes.h16,
                         DropdownButtonFormField<String>(
-                          value: _status,
+                          initialValue: _status,
                           decoration: const InputDecoration(labelText: 'Status'),
                           items: const [
                             DropdownMenuItem(value: 'Active', child: Text('Active')),

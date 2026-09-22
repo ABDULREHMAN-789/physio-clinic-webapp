@@ -33,7 +33,7 @@ class StaffScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.person_remove_rounded, color: AppColors.error, size: 22),
@@ -75,9 +75,9 @@ class StaffScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(AppSizes.p12),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.08),
+                color: AppColors.warning.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -340,7 +340,7 @@ class StaffScreen extends ConsumerWidget {
         child: SizedBox(
           width: double.infinity,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
             dataRowMaxHeight: 70,
             columnSpacing: AppSizes.p20,
             columns: const [
@@ -370,8 +370,8 @@ class StaffScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: staff.status == 'Active'
-                            ? AppColors.success.withOpacity(0.2)
-                            : AppColors.error.withOpacity(0.2),
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.error.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(
@@ -444,8 +444,8 @@ class StaffScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: staff.status == 'Active'
-                            ? AppColors.success.withOpacity(0.2)
-                            : AppColors.error.withOpacity(0.2),
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.error.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(
@@ -632,7 +632,7 @@ class StaffScreen extends ConsumerWidget {
       child: SizedBox(
         width: double.infinity,
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+          headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
           dataRowMaxHeight: 65,
           columns: const [
             DataColumn(label: Text('Patient', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -673,7 +673,7 @@ class StaffScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: patient.tempAssignmentEndDate != null ? Colors.blue.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                      color: patient.tempAssignmentEndDate != null ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                     ),
                     child: Text(
@@ -836,7 +836,7 @@ class StaffScreen extends ConsumerWidget {
       child: SizedBox(
         width: double.infinity,
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.2)),
+          headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.2)),
           dataRowMaxHeight: 65,
           columnSpacing: 12,
           columns: const [
@@ -863,7 +863,7 @@ class StaffScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: (isReverted ? AppColors.success : AppColors.warning).withOpacity(0.15),
+                      color: (isReverted ? AppColors.success : AppColors.warning).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                     ),
                     child: Text(
@@ -918,7 +918,7 @@ class StaffScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: (isReverted ? AppColors.success : AppColors.warning).withOpacity(0.15),
+                        color: (isReverted ? AppColors.success : AppColors.warning).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(

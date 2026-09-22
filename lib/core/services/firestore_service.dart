@@ -73,7 +73,7 @@ class RealFirestoreServiceImpl implements FirestoreService {
           .snapshots()
           .listen((snapshot) {
         list1 = snapshot.docs.map((doc) {
-          final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+          final data = Map<String, dynamic>.from(doc.data());
           if (data['patientId'] == null || (data['patientId'] as String).isEmpty) {
             data['patientId'] = doc.id;
           }
@@ -90,7 +90,7 @@ class RealFirestoreServiceImpl implements FirestoreService {
           .snapshots()
           .listen((snapshot) {
         list2 = snapshot.docs.map((doc) {
-          final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+          final data = Map<String, dynamic>.from(doc.data());
           if (data['patientId'] == null || (data['patientId'] as String).isEmpty) {
             data['patientId'] = doc.id;
           }
@@ -115,7 +115,7 @@ class RealFirestoreServiceImpl implements FirestoreService {
           .snapshots()
           .map((snapshot) {
         return snapshot.docs.map((doc) {
-          final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+          final data = Map<String, dynamic>.from(doc.data());
           if (data['patientId'] == null || (data['patientId'] as String).isEmpty) {
             data['patientId'] = doc.id;
           }
@@ -200,7 +200,7 @@ class RealFirestoreServiceImpl implements FirestoreService {
         .snapshots()
         .map((snapshot) {
       final list = snapshot.docs.map((doc) {
-        final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+        final data = Map<String, dynamic>.from(doc.data());
         if (data['sessionId'] == null || (data['sessionId'] as String).isEmpty) {
           data['sessionId'] = doc.id;
         }
@@ -272,7 +272,7 @@ class RealFirestoreServiceImpl implements FirestoreService {
         .map((snapshot) {
           print('FirestoreService: streamReassignmentLogs success, returned ${snapshot.docs.length} documents.');
           return snapshot.docs.map((doc) {
-            final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+            final data = Map<String, dynamic>.from(doc.data());
             if (data['reassignmentId'] == null || (data['reassignmentId'] as String).isEmpty) {
               data['reassignmentId'] = doc.id;
             }

@@ -283,7 +283,7 @@ class SessionsScreen extends ConsumerWidget {
         child: SizedBox(
           width: double.infinity,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withOpacity(0.4)),
+            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
             dataRowMaxHeight: 80,
             columnSpacing: AppSizes.p24,
             columns: const [
@@ -367,7 +367,7 @@ class SessionsScreen extends ConsumerWidget {
                                 : session.paymentStatus == 'Fee Waiver'
                                     ? Colors.purple
                                     : AppColors.error)
-                            .withOpacity(0.1),
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(
@@ -471,7 +471,7 @@ class SessionsScreen extends ConsumerWidget {
                                 : session.paymentStatus == 'Fee Waiver'
                                     ? Colors.purple
                                     : AppColors.error)
-                            .withOpacity(0.1),
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       ),
                       child: Text(
