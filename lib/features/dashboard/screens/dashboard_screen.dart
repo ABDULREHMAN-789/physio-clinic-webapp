@@ -14,6 +14,7 @@ import '../../billing/providers/massage_chair_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../models/user_model.dart';
 import '../../staff/providers/staff_provider.dart';
+import '../providers/dashboard_salary_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -310,7 +311,7 @@ class DashboardScreen extends ConsumerWidget {
         AppSizes.h24,
 
         if (isAdmin) ...[
-          _buildAdminStaffSalariesCard(context, staff, sessions),
+          _buildAdminStaffSalariesCard(context),
           AppSizes.h24,
         ],
 
@@ -1007,115 +1008,349 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAdminStaffSalariesCard(
-    BuildContext context,
-    List<UserModel> staff,
-    List<SessionModel> sessions,
-  ) {
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildAdminStaffSalariesCard(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final textTheme = Theme.of(context).textTheme;
+        final selectedMonth = ref.watch(salaryMonthFilterProvider);
+        final salarySummaries = ref.watch(staffSalarySummaryProvider);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.p24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.p24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSizes.p8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.people_alt_rounded, color: AppColors.primary, size: 24),
-                ),
-                AppSizes.w12,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Staff Salary & Performance Summary',
-                        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                      ),
-                      Text(
-                        'Overall therapist sessions and revenue generated with calculated salary shares',
-                        style: textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
-              child: Divider(),
-            ),
-            staff.isEmpty
-                ? const SizedBox(
-                    height: 120,
-                    child: Center(
-                      child: Text('No staff members registered yet.', style: TextStyle(color: AppColors.textSecondary)),
-                    ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minWidth: constraints.maxWidth,
+                // Header with Month/Year Picker
+                LayoutBuilder(
+                  builder: (context, headerConstraints) {
+                    final isCompact = headerConstraints.maxWidth < 700;
+                    final titleWidget = Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppSizes.p8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
-                          child: DataTable(
-                            headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
-                            columns: const [
-                              DataColumn(label: Text('Staff Member', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Revenue %', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Sessions Conducted', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Total Revenue Generated', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Calculated Salary', style: TextStyle(fontWeight: FontWeight.bold))),
+                          child: const Icon(Icons.people_alt_rounded, color: AppColors.primary, size: 24),
+                        ),
+                        AppSizes.w12,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Staff Salary & Performance Summary',
+                                style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              ),
+                              Text(
+                                'Overall therapist sessions and revenue generated with calculated salary shares for ${DateFormat('MMMM yyyy').format(selectedMonth)}',
+                                style: textTheme.bodySmall,
+                              ),
                             ],
-                            rows: staff.map((therapist) {
-                              final therapistSessions = sessions.where((s) => s.therapistId == therapist.userId);
-                              final double revenueGenerated = therapistSessions.where((s) => s.paymentStatus == 'Paid').fold(0.0, (sum, s) => sum + s.charges);
-                              final int count = therapistSessions.length;
-                              final double calculatedSalary = revenueGenerated * (therapist.revenuePercentage / 100);
-
-                              return DataRow(
-                                cells: [
-                                  DataCell(
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(therapist.fullName, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                        Text(therapist.email, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                                      ],
-                                    ),
-                                  ),
-                                  DataCell(Text(therapist.role)),
-                                  DataCell(Text('${therapist.revenuePercentage.toStringAsFixed(0)}%')),
-                                  DataCell(Text('$count')),
-                                  DataCell(Text('Rs. ${NumberFormat('#,##0').format(revenueGenerated)}')),
-                                  DataCell(
-                                    Text(
-                                      'Rs. ${NumberFormat('#,##0').format(calculatedSalary)}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
                           ),
                         ),
+                      ],
+                    );
+
+                    final monthPickerWidget = _buildMonthFilterWidget(context, ref, selectedMonth);
+
+                    if (isCompact) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          titleWidget,
+                          AppSizes.h12,
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: monthPickerWidget,
+                          ),
+                        ],
                       );
-                    },
-                  ),
-          ],
-        ),
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: titleWidget),
+                        AppSizes.w16,
+                        monthPickerWidget,
+                      ],
+                    );
+                  },
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSizes.p16),
+                  child: Divider(),
+                ),
+                salarySummaries.isEmpty
+                    ? const SizedBox(
+                        height: 120,
+                        child: Center(
+                          child: Text('No staff members registered yet.', style: TextStyle(color: AppColors.textSecondary)),
+                        ),
+                      )
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minWidth: constraints.maxWidth,
+                              ),
+                              child: DataTable(
+                                headingRowColor: WidgetStateProperty.all(AppColors.primaryLight.withValues(alpha: 0.4)),
+                                columns: const [
+                                  DataColumn(label: Text('Staff Member', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text('Revenue %', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text('Sessions Conducted', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text('Total Revenue Generated', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text('Calculated Salary', style: TextStyle(fontWeight: FontWeight.bold))),
+                                ],
+                                rows: salarySummaries.map((summary) {
+                                  final therapist = summary.staff;
+                                  final count = summary.sessionsCount;
+                                  final revenueGenerated = summary.totalRevenueGenerated;
+                                  final calculatedSalary = summary.calculatedSalary;
+
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(
+                                        Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(therapist.fullName, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                            Text(therapist.email, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                          ],
+                                        ),
+                                      ),
+                                      DataCell(Text(therapist.role)),
+                                      DataCell(Text('${therapist.revenuePercentage.toStringAsFixed(0)}%')),
+                                      DataCell(Text('$count')),
+                                      DataCell(Text('Rs. ${NumberFormat('#,##0').format(revenueGenerated)}')),
+                                      DataCell(
+                                        Text(
+                                          'Rs. ${NumberFormat('#,##0').format(calculatedSalary)}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMonthFilterWidget(BuildContext context, WidgetRef ref, DateTime selectedMonth) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+        border: Border.all(color: AppColors.border),
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left_rounded, size: 20, color: AppColors.textSecondary),
+            onPressed: () {
+              ref.read(salaryMonthFilterProvider.notifier).state = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
+            },
+            tooltip: 'Previous Month',
+            splashRadius: 18,
+            visualDensity: VisualDensity.compact,
+          ),
+          InkWell(
+            onTap: () => _showMonthPicker(context, ref, selectedMonth),
+            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMMM yyyy').format(selectedMonth),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_drop_down_rounded, size: 18, color: AppColors.textSecondary),
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+            onPressed: () {
+              ref.read(salaryMonthFilterProvider.notifier).state = DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
+            },
+            tooltip: 'Next Month',
+            splashRadius: 18,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showMonthPicker(BuildContext context, WidgetRef ref, DateTime currentSelected) async {
+    int pickerYear = currentSelected.year;
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final now = DateTime.now();
+            final months = [
+              'January', 'February', 'March', 'April',
+              'May', 'June', 'July', 'August',
+              'September', 'October', 'November', 'December'
+            ];
+
+            return AlertDialog(
+              titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMedium)),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Select Month & Year', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    splashRadius: 18,
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 340,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Year Selector
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left_rounded),
+                            onPressed: () => setDialogState(() => pickerYear--),
+                            splashRadius: 18,
+                          ),
+                          Text(
+                            '$pickerYear',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right_rounded),
+                            onPressed: () => setDialogState(() => pickerYear++),
+                            splashRadius: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Month Grid
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(12, (index) {
+                        final monthNum = index + 1;
+                        final isSelected = currentSelected.year == pickerYear && currentSelected.month == monthNum;
+                        final isCurrentMonth = now.year == pickerYear && now.month == monthNum;
+
+                        return SizedBox(
+                          width: 74,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: isSelected
+                                  ? AppColors.primary
+                                  : (isCurrentMonth ? AppColors.primaryLight.withValues(alpha: 0.3) : Colors.transparent),
+                              foregroundColor: isSelected ? Colors.white : AppColors.textPrimary,
+                              side: BorderSide(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isCurrentMonth ? AppColors.primary : AppColors.border),
+                                width: isSelected || isCurrentMonth ? 1.5 : 1.0,
+                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            onPressed: () {
+                              ref.read(salaryMonthFilterProvider.notifier).state = DateTime(pickerYear, monthNum, 1);
+                              Navigator.of(dialogContext).pop();
+                            },
+                            child: Text(
+                              months[index].substring(0, 3),
+                              style: TextStyle(
+                                fontWeight: isSelected || isCurrentMonth ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    // Quick Action Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          icon: const Icon(Icons.today_rounded, size: 16),
+                          label: const Text('Current Month', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          onPressed: () {
+                            ref.read(salaryMonthFilterProvider.notifier).state = DateTime(now.year, now.month, 1);
+                            Navigator.of(dialogContext).pop();
+                          },
+                        ),
+                        TextButton(
+                          child: const Text('Cancel', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

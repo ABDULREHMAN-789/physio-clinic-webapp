@@ -171,7 +171,7 @@ class StaffScreen extends ConsumerWidget {
     final isMobile = size.width < AppSizes.tabletBreakpoint;
 
     return DefaultTabController(
-      length: 2,
+      length: 1, // Temporarily set to 1 while Temporary Reassignments tab is hidden
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
@@ -227,16 +227,17 @@ class StaffScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.swap_horiz_rounded, size: 18),
-                          SizedBox(width: 8),
-                          Text('Temporary Reassignments'),
-                        ],
-                      ),
-                    ),
+                    // Temporarily hidden - Temporary Reassignments tab:
+                    // Tab(
+                    //   child: Row(
+                    //     mainAxisSize: MainAxisSize.min,
+                    //     children: [
+                    //       Icon(Icons.swap_horiz_rounded, size: 18),
+                    //       SizedBox(width: 8),
+                    //       Text('Temporary Reassignments'),
+                    //     ],
+                    //   ),
+                    // ),
                   ],
                   labelColor: AppColors.primary,
                   unselectedLabelColor: AppColors.textSecondary,
@@ -265,8 +266,8 @@ class StaffScreen extends ConsumerWidget {
                         error: (err, stack) => _buildErrorState(textTheme, err),
                       ),
 
-                      // Tab 2: Temporary Reassignments
-                      _buildTemporaryReassignmentsTab(context, ref, isMobile),
+                      // Tab 2: Temporary Reassignments (Temporarily hidden)
+                      // _buildTemporaryReassignmentsTab(context, ref, isMobile),
                     ],
                   ),
                 ),
@@ -516,6 +517,7 @@ class StaffScreen extends ConsumerWidget {
   // ─────────────────────────────────────────────────────────────
   // Temporary Reassignments Tab (Tab 2)
   // ─────────────────────────────────────────────────────────────
+  // ignore: unused_element
   Widget _buildTemporaryReassignmentsTab(
     BuildContext context,
     WidgetRef ref,
