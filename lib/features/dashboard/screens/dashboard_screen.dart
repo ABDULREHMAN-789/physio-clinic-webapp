@@ -907,14 +907,15 @@ class DashboardScreen extends ConsumerWidget {
                   icon: Icons.percent_rounded,
                   iconColor: AppColors.secondary,
                 ),
-                _buildSalaryMetricTile(
-                  context,
-                  title: 'Total Therapy Revenue',
-                  value: 'Rs. ${NumberFormat('#,##0').format(totalRevenue)}',
-                  subtitle: 'Generated from $sessionsCompleted sessions',
-                  icon: Icons.trending_up_rounded,
-                  iconColor: AppColors.primary,
-                ),
+                // Temporarily hidden - Total Therapy Revenue card:
+                // _buildSalaryMetricTile(
+                //   context,
+                //   title: 'Total Therapy Revenue',
+                //   value: 'Rs. ${NumberFormat('#,##0').format(totalRevenue)}',
+                //   subtitle: 'Generated from $sessionsCompleted sessions',
+                //   icon: Icons.trending_up_rounded,
+                //   iconColor: AppColors.primary,
+                // ),
                 _buildSalaryMetricTile(
                   context,
                   title: 'Calculated Salary',

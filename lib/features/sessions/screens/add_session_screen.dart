@@ -532,7 +532,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
 
                         // Notes & Next Steps
                         const Text(
-                          'Treatment Notes / Diagnosis Activities *',
+                          'Treatment Notes / Diagnosis Activities',
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                         ),
                         AppSizes.h8,
@@ -543,7 +543,6 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                           decoration: const InputDecoration(
                             hintText: 'Record therapy routines administered, progress updates, pain score reports, exercises, etc...',
                           ),
-                          validator: (val) => Validators.required(val, 'Treatment notes'),
                         ),
                         AppSizes.h24,
 
